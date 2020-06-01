@@ -1,0 +1,57 @@
+Basic Z29hbmRyb3k6MTIzNDU=
+
+Basic Z29hbmRyb3k6MTIzNDU=
+
+Volley.newRequestQueue(context, new HurlStack(null, ClientSSLSocketFactory.getSocketFactory()))
+
+
+{"status":"success","message":"User Login validation successful.","user_full_name":"Rahisi Port User","user_mobile":"+255782292073","user_email":"rahisiuser@gmail.com","user_port_id":"PORT001","user_device_id":"123456789"}
+
+[
+	{
+		"booking_id":"ZANF-1547492837",
+		"ferry_name":"Sear Star 1",
+		"journey_date":"15-01-2019",
+		"start_port":"Unguja",
+		"end_port":"Mkoani",
+		"depature_time":"09:00",
+		"booking_status":"CONFIRMED",
+		"booking_class":"Economy",
+		"booking_contact_email":"passanger@gmail.com",
+		"booking_contact_mobile":"12345678",
+		"adult":1,
+		"child":1,
+		"passanger_data":{
+			"adult_data":[
+				{
+					"name":"Adult 1",
+					"age":"Adult",
+					"nationality":"Resident",
+					"id_doc":"Voter_ID",
+					"id":"VV0001",
+					"booking_price":"20000"
+				}
+			],
+			"child_data":[
+				{
+					"name":"Child 1",
+					"age":"Child",
+					"nationality":"Resident",
+					"id_doc":"Others",
+					"id":"SCHOOL ID",
+					"booking_price":"10000"
+				}
+			],
+			"infant_data":[
+				{
+					"name":"Infant 1",
+					"age":"Infant",
+					"nationality":"Resident",
+					"id_doc":"Others",
+					"id":"NA",
+					"booking_price":"0.00"
+				}
+			]
+		}
+	}
+]

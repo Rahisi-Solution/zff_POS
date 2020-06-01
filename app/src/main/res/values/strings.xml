@@ -1,0 +1,83 @@
+<resources>
+    <string name="app_name">ZZF Boarding (II)</string>
+    <string name="version">1.2.0</string>
+    <string name="title_activity_login">Sign in</string>
+    <string name="title_activity_deployment">Register House</string>
+    <string name="title_activity_main">ZFF Boarding System</string>
+    <string name="title_activity_route">Select Route To Board</string>
+    <!-- Strings related to login -->
+    <string name="prompt_user_name">Operator ID</string>
+    <string name="prompt_user_password">PIN</string>
+    <string name="action_sign_in">Sign In</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_operator">This operator code is invalid</string>
+    <string name="error_invalid_password">This operator key is too short</string>
+    <string name="error_incorrect_password">This operator key is incorrect</string>
+
+    <!-- Property Deployment Form -->
+    <string name="prompt_existing_customer">Existing Customer</string>
+    <string name="prompt_account_number">Account Number</string>
+    <string name="prompt_has_meter">Has Meter</string>
+    <string name="prompt_meter_number">Meter Number</string>
+    <string name="prompt_has_well">Has Well</string>
+    <string name="prompt_has_water">Has Water</string>
+    <string name="button_deploy_customer">Submit Record</string>
+    <string name="prompt_yes_value">Yes</string>
+    <string name="prompt_no_value">No</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="error_invalid_account">Account number must be 5 or more characters</string>
+    <string name="error_invalid_meter">Meter number must be 5 characters long</string>
+    <string name="error_local_data_save">Could not save data</string>
+    <string name="success_local_data_save">Data saved successfully</string>
+    <string name="barcode_placeholder">{barcode}</string>
+    <string name="barcode_empty_value"></string>
+    <string name="prompt_bar_scan">Scan Ticket Number</string>
+    <string name="button_scan_sticker">Scan Ticket</string>
+    <string name="button_cancel_scanning">Cancel</string>
+    <string name="operating">Scanning, wait..</string>
+    <string name="operation_fail">Could not scan the barcode</string>
+    <string name="barcode_title_text">{barcode}</string>
+    <string name="failed_login">Invalid Port User or Password</string>
+
+    <!-- Main page string values-->
+    <string name="button_add_property_text">Add Property</string>
+    <string name="prompt_operator_name">User:</string>
+    <string name="prompt_empty_values">N/A</string>
+    <string name="button_logout">Logout</string>
+    <string name="logout_confirmation">Are you sure you want to log out?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="passenger_not_found">N/A</string>
+    <string name="ticket_not_found">N/A</string>
+
+    <string name="ticket_already_scanned">DO NOT ALLOW: (ALREADY ON BOARD)</string>
+    <string name="ticket_cancelled">DO NOT ALLOW: (TICKET IS CANCELLED)</string>
+    <string name="ticket_invalid">DO NOT ALLOW: (INVALID TICKET)</string>
+    <string name="ticket_notfound">DO NOT ALLOW: (TICKET NOT FOUND)</string>
+    <string name="ticket_valid"> ***ALLOW BOARDING***</string>
+    <string name="time_invalid">DO NOT ALLOW: (NOT FOR THIS TIME)</string>
+    <string name="date_invalid">DO NOT ALLOW: (NOT FOR THIS DATE)</string>
+    <string name="route_invalid">DO NOT ALLOW: (NOT THIS ROUTE)</string>
+    <string name="ticket_pending">TICKET NOT CONFIRMED</string>
+    <string name="ticket_expired">TICKET EXPIRED</string>
+    <string name="ticket_unknown">TICKET STATUS UKNOWN</string>
+    <string name="scanned_tickets">SCANNED: {total}</string>
+    <string name="btn_logout">Logout</string>
+    <string name="btn_change_route">Change Route</string>
+    <string name="btn_change_mode">Change Mode</string>
+    <string name="button_add_manual">Search Ticket</string>
+    <string name="no_tickets_found">No available tickets</string>
+    <string name="title_activity_camera_scanner">CameraScanner</string>
+
+    <string name="title_activity_mode">Action to Perform</string>
+    <string name="verification">2. Verification</string>
+    <string name="verify">Verify</string>
+    <string name="boarding">1. Boarding</string>
+    <string name="select_mode">Select Activity</string>
+    <string name="powered_by">Powered By</string>
+    <string name="now_boarding">Now Boarding Route</string>
+    <string name="now_verifing">Now Verifying Ticket</string>
+
+    <string name="scanned"> *CHECKED WHEN BOARDING*</string>
+    <string name="never_scanned"> NOT CHECKED </string>
+</resources>
