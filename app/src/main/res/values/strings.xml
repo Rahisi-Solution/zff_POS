@@ -50,7 +50,9 @@
     <string name="passenger_not_found">N/A</string>
     <string name="ticket_not_found">N/A</string>
 
+    <string name="company_invalid">TICKET NOT FOR ZANFAST</string>
     <string name="ticket_already_scanned">DO NOT ALLOW: (ALREADY ON BOARD)</string>
+    <string name="ticket_not_for_this_route">DO NOT ALLOW: (NOT FOR THIS ROUTE)</string>
     <string name="ticket_cancelled">DO NOT ALLOW: (TICKET IS CANCELLED)</string>
     <string name="ticket_invalid">DO NOT ALLOW: (INVALID TICKET)</string>
     <string name="ticket_notfound">DO NOT ALLOW: (TICKET NOT FOUND)</string>
@@ -80,4 +82,6 @@
 
     <string name="scanned"> *CHECKED WHEN BOARDING*</string>
     <string name="never_scanned"> NOT CHECKED </string>
+    <string name="rahisi_solution">Rahisi Solution</string>
+    <string name="select_route">Select Route</string>
 </resources>

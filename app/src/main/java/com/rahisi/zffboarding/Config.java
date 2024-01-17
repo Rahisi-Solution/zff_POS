@@ -7,12 +7,18 @@ import android.os.Vibrator;
 
 public class Config {
     static String  app_ip = "https://booking.zff.co.tz/api/scanner/";
+    static String logsEndpoint = "https://172.19.255.4/api/";
+
+   // static String  app_ip = "http://172.16.10.143:8052/api/scanner/";
+   // static String logsEndpoint = "http://172.16.10.143:8052/api/";
+
     //static String  app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
     public static final String LOGIN_URL = app_ip + "scanner_login.php";
     public static final String BOOKING_URL = app_ip + "scanner_fetch_bookings.php";
     public static final String UPDATE_TICKET_URL = app_ip + "customerboardingchecking";
     public static final String FIND_TICKET_URL = app_ip + "scanner_get_ticket.php";
     public static final String VERIFY_TICKET_URL = app_ip + "scanner_verify_ticket.php";
+    public static final String REPORT_ERROR_LOG = logsEndpoint + "issues_reporting/error_reporting.php";
 
 
     public static final String API_USER_NAME = "goandroy";

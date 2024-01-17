@@ -51,6 +51,7 @@
     <string name="passenger_not_found">N/A</string>
     <string name="ticket_not_found">N/A</string>
 
+    <string name="company_invalid">TICKET NOT FOR ZANFAST</string>
     <string name="ticket_already_scanned">SIMAMA: AMESHEINGIA</string>
     <string name="ticket_cancelled">SIMAMA: IMEAHIRISHWA</string>
     <string name="ticket_invalid">SIMAMA: HAIFAI</string>

@@ -12,9 +12,7 @@ import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.util.Base64;
@@ -27,6 +25,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
@@ -64,10 +66,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     Button mSearchTicketButton;
     Button mLogoutButton;
     SharedPreferences mSharedPreferences, routeSharedPref;
-    Dialog  manualDialog;
+    Dialog  manualDialog, childDialog;
     String mTicketNumber, operator, pin;
     int mScannedTickets;
-    String qr_departure_date, qr_departure_time, qr_destination, qr_ticket_number, qr_today_date;
+    String qr_departure_date, qr_departure_time, qr_destination, qr_ticket_number, qr_today_date,qr_route,  qr_age;
     private int mTotalTickets;
     SimpleDateFormat db_date_format = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat qr_date_format = new SimpleDateFormat("dd MMMM, yyyy");
@@ -82,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
+
         setContentView(R.layout.activity_main);
 
         mSharedPreferences = MainActivity.this.getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
@@ -106,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         operator = mSharedPreferences.getString(Config.KEY_OPERATOR, "NA");
         pin = mSharedPreferences.getString("pin", "NA");
 
-        if(Build.MODEL.equals("EDA50K")){
+        if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")){
             mVerifyTicketButton.setVisibility(View.GONE);
         }
 
@@ -141,10 +145,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             @Override
             public void onClick(View view) {
                 System.out.println("MODEL " + Build.MODEL);
-                if(Build.MODEL.equals("EDA50K")){
+                if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")){
                     mVerifyTicketButton.setVisibility(View.GONE);
                 }
-
                 new GetTicketNumberTask().execute();
             }
         });
@@ -202,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             // Apply the settings
             barcodeReader.setProperties(properties);
         }else{
-            if(Build.MODEL.equals("EDA50K")) {
+            if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")) {
                 Intent intent = new Intent(MainActivity.this, RouteActivity.class);
                 startActivity(intent);
                 finish();
@@ -222,7 +225,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 }else if (event.getCodeId().toLowerCase().equals("s")){
                    extractTicketNumberFromQRCode(event.getBarcodeData());
                     System.out.println(qr_departure_date + " - " + qr_today_date);
-                    if(!qr_departure_date.equals(qr_today_date)){
+                    if(!qr_ticket_number.substring(0, 3).equals("ZFF") && !qr_ticket_number.substring(0, 3).equals("ZFA")){
+                        Config.doVibration(MainActivity.this);
+                        mPassengerNameDisplay.setTextColor(Color.RED);
+                        mPassengerNameDisplay.setText(R.string.company_invalid);
+                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_no_entry, 0, 0);
+                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
+                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                        mVerifyTicketButton.setEnabled(true);
+                    }else if(!qr_departure_date.equals(qr_today_date)){
                         Config.doVibration(MainActivity.this);
                         mPassengerNameDisplay.setTextColor(Color.RED);
                         mPassengerNameDisplay.setText(R.string.date_invalid);
@@ -240,8 +252,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
                         mVerifyTicketButton.setText(R.string.button_scan_sticker);
                         mVerifyTicketButton.setEnabled(true);
-                   }else{
-
+                   }else if(!qr_route.equals(route_name)){
+                        Config.doVibration(MainActivity.this);
+                        mPassengerNameDisplay.setTextColor(Color.RED);
+                        mPassengerNameDisplay.setText(R.string.ticket_not_for_this_route);
+                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                        mVerifyTicketButton.setEnabled(true);
+                   } else{
                        searchTicket(qr_ticket_number);
                    }
                 }
@@ -257,6 +277,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             qr_departure_date =  ticket.get("Departure Date").toString();
             qr_departure_time =  ticket.get("Departure Time").toString();
             qr_destination =  ticket.get("Destination").toString();
+            qr_route =  ticket.get("Boarding Point").toString() +" - " + ticket.get("Destination").toString();
         }catch (JSONException e) {
             System.out.println("Barcode Error: " + e);
         }
@@ -352,9 +373,11 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             public void onClick(View v) {
                 manualDialog.dismiss();
                 mTicketNumber = mTicketNumberEditor.getText().toString();
-                if (!mTicketNumber.startsWith("ZFF")){
+                if (!mTicketNumber.startsWith("ZFF") && !mTicketNumber.startsWith("ZFA")) {
+                    // If it doesn't start with "ZFF" or "ZFA", prepend "ZFF"
                     mTicketNumber = "ZFF" + mTicketNumber;
                 }
+
                 mTicketNumberDisplay.setText(getString(R.string.barcode_title_text).replace(getString(R.string.barcode_placeholder), mTicketNumber));
                 if (mTicketNumber != null && mTicketNumber.length() > 0) {
                     JSONObject ticket = mDatabaseAdapter.getTicket(mTicketNumber);
@@ -449,7 +472,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }
         } catch (JSONException ex) {
             if(action.equals("boarding")) {
-                processOnlineTicket();
+                processOnlineTicket(
+
+                );
             }else{
                 verifyTicket();
             }
@@ -466,7 +491,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                             JSONObject responseData = new JSONObject(response);
                             try {
                                 if (responseData.has(Config.RESPONSE_CODE)) {
-                                    if (responseData.getInt(Config.RESPONSE_CODE) == 100){
+                                    if(!mTicketNumber.substring(0, 3).equals("ZFF") && !mTicketNumber.substring(0, 3).equals("ZFA")){
+                                        Config.doVibration(MainActivity.this);
+                                        mPassengerNameDisplay.setTextColor(Color.RED);
+                                        mPassengerNameDisplay.setText(R.string.company_invalid);
+                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_no_entry, 0, 0);
+                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
+                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                        mVerifyTicketButton.setEnabled(true);
+                                    }else if (responseData.getInt(Config.RESPONSE_CODE) == 100){
                                         Config.doVibration(MainActivity.this);
                                         mPassengerNameDisplay.setTextColor(Color.RED);
                                         mPassengerNameDisplay.setText(R.string.ticket_already_scanned);
@@ -490,6 +524,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                                         Config.doVibration(MainActivity.this);
                                         mPassengerNameDisplay.setTextColor(Color.RED);
                                         mPassengerNameDisplay.setText(R.string.ticket_notfound);
+                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                        mVerifyTicketButton.setEnabled(true);
+                                        return;
+                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 655){
+                                        Config.doVibration(MainActivity.this);
+                                        mPassengerNameDisplay.setTextColor(Color.RED);
+                                        mPassengerNameDisplay.setText(R.string.ticket_not_for_this_route);
                                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                                         mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
                                         mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
@@ -598,6 +642,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 params.put("date", today_date);
                 params.put("operator", operator);
                 params.put("pin", pin);
+                params.put("route", route_id);
 
                 System.out.println("SEARCH REQUEST: " + params);
                 //returning parameter
@@ -627,125 +672,142 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
     private void verifyTicket() {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, Config.VERIFY_TICKET_URL,
-                new Response.Listener<String>(){
-                    @Override
-                    public void onResponse(String response) {
-                        System.out.println("Verify Ticket RESPONSE: " + response);
+                response -> {
+                    System.out.println("Verify Ticket RESPONSE: " + response);
+                    try {
+                        JSONObject responseData = new JSONObject(response);
                         try {
-                            JSONObject responseData = new JSONObject(response);
-                            try {
-                                if (responseData.has(Config.RESPONSE_CODE)) {
-                                    if (responseData.getInt(Config.RESPONSE_CODE) == 100){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.never_scanned);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    } else  if (responseData.getInt(Config.RESPONSE_CODE) == 400){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.ticket_cancelled);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 500){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.ticket_expired);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 300){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.ticket_expired);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 350){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.ticket_pending);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    } else  if (responseData.getInt(Config.RESPONSE_CODE) == 700){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.ticket_notfound);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 200){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.GREEN);
-                                        mPassengerNameDisplay.setText(R.string.scanned);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_tick_box_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        //mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        //mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    } else  if (responseData.getInt(Config.RESPONSE_CODE) == 600) {
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.date_invalid);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                    }else  if (responseData.getInt(Config.RESPONSE_CODE) == 650){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.time_invalid);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                    }
-
+                            if (responseData.has(Config.RESPONSE_CODE)) {
+                                if (responseData.getInt(Config.RESPONSE_CODE) == 100){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.never_scanned);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                } else  if (responseData.getInt(Config.RESPONSE_CODE) == 400){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_cancelled);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                }else  if (responseData.getInt(Config.RESPONSE_CODE) == 500){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_expired);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                }else  if (responseData.getInt(Config.RESPONSE_CODE) == 300){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_expired);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                }else  if (responseData.getInt(Config.RESPONSE_CODE) == 655){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_not_for_this_route);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                } else  if (responseData.getInt(Config.RESPONSE_CODE) == 350){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_pending);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                } else  if (responseData.getInt(Config.RESPONSE_CODE) == 700){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.ticket_notfound);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                }else  if (responseData.getInt(Config.RESPONSE_CODE) == 200){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.GREEN);
+                                    mPassengerNameDisplay.setText(R.string.scanned);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_tick_box_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    //mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    //mVerifyTicketButton.setEnabled(true);
+                                    return;
+                                } else  if (responseData.getInt(Config.RESPONSE_CODE) == 600) {
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.date_invalid);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                }else  if (responseData.getInt(Config.RESPONSE_CODE) == 650){
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.time_invalid);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
+                                } else if(!qr_ticket_number.substring(0, 3).equals("ZFF") && !qr_ticket_number.substring(0, 3).equals("ZAF")) {//changed from ZFA to ZAF
+                                    Config.doVibration(MainActivity.this);
+                                    mPassengerNameDisplay.setTextColor(Color.RED);
+                                    mPassengerNameDisplay.setText(R.string.company_invalid);
+                                    mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_no_entry, 0, 0);
+                                    mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                                    mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
+                                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                                    mVerifyTicketButton.setEnabled(true);
                                 }
-                                mScannedTickets += 1;
-                                mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
-                            } catch (JSONException ex) {
-                                System.out.println("JSON ERROR: " + ex);
-                                mPassengerNameDisplay.setText(R.string.passenger_not_found);
-                                mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
+
                             }
-                        } catch (JSONException e) {
-                            System.out.println("TICKET ERRORS: " + e.getMessage());
-                            e.printStackTrace();
+                            mScannedTickets += 1;
+                            mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
+                        } catch (JSONException ex) {
+
+                            System.out.println("JSON ERROR: " + ex);
                             mPassengerNameDisplay.setText(R.string.passenger_not_found);
                             mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                             mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
                             mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
                         }
-                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                        mVerifyTicketButton.setEnabled(true);
+                    } catch (JSONException e) {
+                        System.out.println("TICKET ERRORS: " + e.getMessage());
+                        e.printStackTrace();
+                        mPassengerNameDisplay.setText(R.string.passenger_not_found);
+                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
+                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
                     }
+                    mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                    mVerifyTicketButton.setEnabled(true);
                 },
                 new Response.ErrorListener() {
                     @Override
@@ -770,6 +832,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 params.put("date", today_date);
                 params.put("operator", operator);
                 params.put("pin", pin);
+                params.put("route", route_id);
 
                 System.out.println("VERIFY REQUEST: " + params);
                 //returning parameter
@@ -924,7 +987,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 try {
                     // Check if the ticket is already scanned
                     int isScanned = ticket.getInt(Config.TICKET_SCANNED);
-                    if (isScanned > 0) {
+                    if(!mTicketNumber.substring(0, 3).equals("ZFF") && !mTicketNumber.substring(0, 3).equals("ZFA")){
+                        Config.doVibration(MainActivity.this);
+                        mPassengerNameDisplay.setTextColor(Color.RED);
+                        mPassengerNameDisplay.setText(R.string.company_invalid);
+                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_no_entry, 0, 0);
+                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
+                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
+                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
+                        mVerifyTicketButton.setEnabled(true);
+                    }else if (isScanned > 0) {
                         mPassengerNameDisplay.setText(R.string.ticket_already_scanned);
                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                         mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
@@ -1110,6 +1182,19 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         );
         requestQueue.add(stringRequest);
+    }
+
+    private void childDialog(String ticket_age){
+        TextView _ticket_age;
+        childDialog = new Dialog(this);
+        childDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        childDialog.setContentView(R.layout.dialog_child);
+        _ticket_age = childDialog.findViewById(R.id.tv_ticket_age);
+        _ticket_age.setText(ticket_age);
+        childDialog.setCancelable(false);
+        childDialog.setCanceledOnTouchOutside(true);
+        childDialog.show();
+
     }
 
 }

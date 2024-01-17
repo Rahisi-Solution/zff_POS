@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/text_add_new_property_color">
+
+    <TextView
+        android:id="@+id/scan_title"
+        android:layout_width="match_parent"
+        android:layout_height="62dp"
+        android:background="@color/colorPrimaryDark"
+        android:gravity="bottom"
+        android:padding="5dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="Scan Ticket"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/pageHeader"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:background="@color/colorPrimaryDark"
+        android:gravity="center"
+        android:text="Hold your Camera on Ticket QR code to scan"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@+id/scan_title"
+        tools:layout_editor_absoluteX="0dp" />
+
+
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
+        android:id="@+id/zxing_barcode_scanner"
+        android:layout_width="408dp"
+        android:layout_height="545dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pageHeader"
+        app:zxing_preview_scaling_strategy="fitCenter"
+        app:zxing_use_texture_view="false">
+
+    </com.journeyapps.barcodescanner.DecoratedBarcodeView>
+
+    <Button
+        android:id="@+id/qrFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:background="@android:color/white"
+        android:padding="20dp"
+        android:text="@string/rahisi_solution"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="#5B2C6F"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/zxing_barcode_scanner" />
+</androidx.constraintlayout.widget.ConstraintLayout>
