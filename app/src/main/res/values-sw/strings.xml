@@ -81,4 +81,5 @@
     <string name="ticket_pending">TICKET NOT CONFIRMED</string>
     <string name="ticket_expired">TICKET EXPIRED</string>
     <string name="ticket_unknown">TICKET STATUS UKNOWN</string>
+    <string name="no_internet_connection">No internet connection, connect to intenet to continue</string>
 </resources>

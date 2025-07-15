@@ -84,4 +84,5 @@
     <string name="never_scanned"> NOT CHECKED </string>
     <string name="rahisi_solution">Rahisi Solution</string>
     <string name="select_route">Select Route</string>
+    <string name="no_internet_connection">No internet connection, connect to internet to continue</string>
 </resources>

@@ -9,7 +9,7 @@ public class Config {
     static String  app_ip = "https://booking.zff.co.tz/api/scanner/";
     static String logsEndpoint = "https://172.19.255.4/api/";
 
-   // static String  app_ip = "http://172.16.10.143:8052/api/scanner/";
+//    static String  app_ip = "http://172.16.10.161:2019/scanner/";
    // static String logsEndpoint = "http://172.16.10.143:8052/api/";
 
     //static String  app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
@@ -85,6 +85,7 @@ public class Config {
         Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+//            v.vibrate(VibrationEffect.createWaveform(new long[]{0, 500, 1000, 500}, -1));
         }else{
             v.vibrate(500);
         }

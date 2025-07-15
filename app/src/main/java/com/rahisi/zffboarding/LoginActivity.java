@@ -7,8 +7,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -16,6 +19,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +32,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,6 +52,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button mOperatorSignInButton;
     private boolean loggedIn = false;
     private Context mContext = LoginActivity.this;
+    View parentLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +61,7 @@ public class LoginActivity extends AppCompatActivity {
         Configuration configuration = new Configuration();
         configuration.locale = locale;
         getBaseContext().getResources().updateConfiguration(configuration, getBaseContext().getResources().getDisplayMetrics());
+        parentLayout = findViewById(android.R.id.content);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
@@ -69,7 +76,15 @@ public class LoginActivity extends AppCompatActivity {
                 // If the event is a key-down event on the "enter" button
                 if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
                     hideOnScreenKeyboard();
-                    login();
+                    if(isOnline(LoginActivity.this)) {
+                        login();
+                        System.out.println("KEY PRESSED: " + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
+                    } else {
+//                        Toast.makeText(mContext, R.string.no_internet_connection, Toast.LENGTH_LONG).show();
+                        showSnackBar(R.string.no_internet_connection + "");
+                        return false;
+                    }
+//                    login();
                 }
                 return false;
             }
@@ -79,9 +94,40 @@ public class LoginActivity extends AppCompatActivity {
         mOperatorSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                login();
+                if(isOnline(LoginActivity.this)) {
+                    login();
+                    System.out.println("KEY PRESSED: " + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
+                } else {
+                    System.out.println("NO INTERNET CONNECTION" + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
+                    showSnackBar("No internet connection, connect to the internet to continue");
+//                    Toast.makeText(mContext, R.string.no_internet_connection, Toast.LENGTH_LONG).show();
+//                    return false;
+                }
+//                login();
             }
         });
+    }
+
+    // Check Device internet connectivity
+    public static boolean isOnline(Context context){
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(CONNECTIVITY_SERVICE);
+
+        if(connectivityManager != null) {
+            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.isConnected();
+        } else {
+            return false;
+        }
+    }
+
+    void showSnackBar(String displayMessage) {
+        Snackbar snackbar;
+        snackbar = Snackbar.make(parentLayout, displayMessage, Snackbar.LENGTH_SHORT);
+        View snack_view = snackbar.getView();
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)snack_view.getLayoutParams();
+        params.gravity = Gravity.BOTTOM;
+        snack_view.setBackgroundColor(0xFFe56b6f);
+        snackbar.show();
     }
 
     @Override
@@ -200,8 +246,6 @@ public class LoginActivity extends AppCompatActivity {
         );
         requestQueue.add(stringRequest);
     }
-
-
 
     @Override
     protected void onPause() {

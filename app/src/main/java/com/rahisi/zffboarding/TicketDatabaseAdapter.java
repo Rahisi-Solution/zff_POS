@@ -45,7 +45,7 @@ public class TicketDatabaseAdapter {
             JSONObject ticket = new JSONObject();
             try {
                 for (String column: columns) {
-                    ticket.put(column, cursor.getString(cursor.getColumnIndex(column)));
+                    ticket.put(column, cursor.getString(cursor.getColumnIndexOrThrow(column)));
                 }
                 tickets.put(ticket);
             }  catch (Exception e) {
@@ -67,7 +67,7 @@ public class TicketDatabaseAdapter {
         JSONObject ticket = new JSONObject();
         try {
             for (String column: columns) {
-                ticket.put(column, cursor.getString(cursor.getColumnIndex(column)));
+                ticket.put(column, cursor.getString(cursor.getColumnIndexOrThrow(column)));
             }
         }  catch (Exception e) {
             System.out.print(e.getMessage());
