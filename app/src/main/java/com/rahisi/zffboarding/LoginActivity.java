@@ -159,6 +159,7 @@ public class LoginActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     // required for operator
                     String result_status = "";
+                    String result_message = "";
                     String operator_name = "";
                     JSONArray routes;
                     @Override
@@ -171,6 +172,7 @@ public class LoginActivity extends AppCompatActivity {
                             routes = jsonObject.getJSONArray("routes");
                             JSONObject operatorData = operatorResult.getJSONObject(0);
                             result_status = operatorData.getString(Config.KEY_STATUS);
+                            result_message = operatorData.optString("message", "");
                             operator_name = operatorData.getString(Config.KEY_OPERATOR_NAME);
 
                         } catch (JSONException e) {
@@ -179,6 +181,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
 
                         if(result_status.equalsIgnoreCase(Config.LOGIN_SUCCESS)){
+//                        if(result_status.equalsIgnoreCase("failed")){
                             //Creating a shared preference
                             SharedPreferences sharedPreferences = mContext.getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
                             //Creating editor to store values to shared preferences
@@ -189,6 +192,7 @@ public class LoginActivity extends AppCompatActivity {
                             editor.putString("pin", pin);
                             editor.putString("operator", operator);
                             editor.putString("routes", routes.toString());
+                            editor.putLong("login_time", System.currentTimeMillis());
                             //Saving values to editor
                             editor.commit();
                             //Starting  activity
@@ -197,9 +201,14 @@ public class LoginActivity extends AppCompatActivity {
                             startActivity(intent);
                             finish();
                         }else{
+                            System.out.println("Message value: " + result_message);
                             //If the server response is not success
                             //Displaying an error message on toast
-                            Toast.makeText(mContext, R.string.failed_login, Toast.LENGTH_LONG).show();
+                            if(result_message.equals("")){
+                                Toast.makeText(mContext, R.string.failed_login, Toast.LENGTH_LONG).show();
+                            } else{
+                                Toast.makeText(mContext, result_message, Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
                 },
@@ -221,7 +230,7 @@ public class LoginActivity extends AppCompatActivity {
                 params.put("operator_pin", pin);
                 params.put("user_device_id", "1");
                 params.put(Config.API_KEY_NAME, Config.API_KEY);
-
+                System.out.println("Parameters za login: " + params);
                 //returning parameter
                 return params;
             }

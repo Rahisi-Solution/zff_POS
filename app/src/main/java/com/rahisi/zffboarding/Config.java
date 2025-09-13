@@ -6,14 +6,24 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 
 public class Config {
-    static String  app_ip = "https://booking.zff.co.tz/api/scanner/";
+
+    /* Logs EndPoint */
     static String logsEndpoint = "https://172.19.255.4/api/";
 
-//    static String  app_ip = "http://172.16.10.161:2019/scanner/";
-   // static String logsEndpoint = "http://172.16.10.143:8052/api/";
+    /* Online EndPoint */
+//    static String  app_ip = "https://booking.zff.co.tz/api/scanner/";
 
-    //static String  app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
+    /* Demo EndPoint */
+//    static String  app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
+//    static String  app_ip = "https://ferries.rahisi.co.tz/api/scanner/";
+
+    /* Local EndPoints */
+    static String  app_ip = "http://172.16.10.217:2019/scanner/";   // Vicent
+//    static String  app_ip = "http://172.16.10.164:7800/scanner/";   // John
+//    static String logsEndpoint = "http://172.16.10.143:8052/api/";
+
     public static final String LOGIN_URL = app_ip + "scanner_login.php";
+    public static final String LOGOUT_URL = app_ip + "scanner_logout.php";
     public static final String BOOKING_URL = app_ip + "scanner_fetch_bookings.php";
     public static final String UPDATE_TICKET_URL = app_ip + "customerboardingchecking";
     public static final String FIND_TICKET_URL = app_ip + "scanner_get_ticket.php";
@@ -38,6 +48,7 @@ public class Config {
 
     //If server response is equal to this that means login is successful
     public static final String LOGIN_SUCCESS = "success";
+    public static final String LOGOUT_SUCCESS = "You have successfully logged out";
 
     //Keys for Sharedpreferences
     //This would be the name of our shared preferences
