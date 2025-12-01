@@ -64,41 +64,47 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     TextView mOperatorDisplayLabel;
     TextView mOperatorDisplay;
     TextView mTicketNumberDisplay;
-    TextView mPassengerNameDisplay, tv_route, tv_time, tv_date, tv_action_performed;
+    TextView mPassengerNameDisplay;
+    TextView tv_route;
+    TextView tv_time;
+    TextView tv_date;
+    TextView tv_action_performed;
     EditText mTicketNumberEditor;
     Button mVerifyTicketButton;
     Button mSearchTicketButton;
     Button mLogoutButton;
-    SharedPreferences mSharedPreferences, routeSharedPref;
-    Dialog  manualDialog, childDialog;
-    String mTicketNumber, operator, pin;
-    int mScannedTickets;
-    String qr_departure_date, qr_departure_time, qr_destination, qr_ticket_number, qr_today_date,qr_route,  qr_age, qr_name;
+    SharedPreferences mSharedPreferences;
+    SharedPreferences  routeSharedPref;
+    Dialog manualDialog;
+    Dialog childDialog;
+    String mTicketNumber;
+    String pin;
+    String operator;
+    String qr_departure_date;
+    String qr_departure_time;
+    String qr_destination;
+    String qr_ticket_number;
+    String qr_today_date;
+    String qr_route;
+    String qr_age;
+    String qr_name;
+    String today_date;
+    String  route_id;
+    String  route_name;
+    String routesJson;
+    String route_departure_time;
+    String action;
+    String service_to_call;
+    String mDepartureDate;
+    String result_status;
     private int mTotalTickets;
+    int mScannedTickets;
     SimpleDateFormat db_date_format = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat qr_date_format = new SimpleDateFormat("dd MMMM, yyyy");
-    String today_date;
-    String route_departure_time, route_id, route_name, today;
     TicketDatabaseAdapter mDatabaseAdapter = new TicketDatabaseAdapter(this);
-
     private com.honeywell.aidc.BarcodeReader barcodeReader;
-    String action, service_to_call;
-    String mDepartureDate;
     private Context mContext = MainActivity.this;
-    String result_status;
-    String result_message;
-//    private static final long MAX_SESSION_TIME = 60 * 60 * 1000;
     private static final long MAX_SESSION_TIME = 60 * 1000;
-
-    private void checkSessionTimeout() {
-        SharedPreferences prefs = mContext.getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-        long loginTime = prefs.getLong("login_time", 0);
-        long currentTime = System.currentTimeMillis();
-
-        if (loginTime != 0 && (currentTime - loginTime) >= MAX_SESSION_TIME) {
-            signout();
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,15 +113,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
         setContentView(R.layout.activity_main);
 
-        mSharedPreferences = MainActivity.this.getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-        routeSharedPref = MainActivity.this.getSharedPreferences(Config.ROUTE_SHARED_PREF, Context.MODE_PRIVATE);
-        route_departure_time = routeSharedPref.getString("departure_time", "NA");
-        route_id = routeSharedPref.getString("route_id", "NA");
-        System.out.println("Route id: " + route_id);
-        route_name = routeSharedPref.getString("route_name", "NA");
-        System.out.println("Route time: " + route_departure_time);
-        action = routeSharedPref.getString("action", "NA");
-        System.out.println("Action: "  + action);
+        routeSharedPref = getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
+        mSharedPreferences = getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
+        routesJson = mSharedPreferences.getString(Config.PREF_ROUTES_JSON, "");
+        route_id = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_ID, "NA");
+        route_name = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_NAME, "NA");
+        route_departure_time = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_TIME, "NA");
+        action = mSharedPreferences.getString(Config.PREF_SELECTED_ACTION, "NA");
+        System.out.println("Route id: " + route_id + " Route Json: " + routesJson + " Route Name: " + route_name + " Route time: " + route_departure_time + " Action: "  + action);
+
+        loadRouteFromJson();
 
         tv_action_performed = findViewById(R.id.tv_task_performed);
         mOperatorDisplayLabel = findViewById(R.id.textViewOperatorLabel);
@@ -128,28 +135,26 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         mScannedTickets = mSharedPreferences.getInt(Config.SHARED_SCANNED_TICKETS, 0);
         operator = mSharedPreferences.getString(Config.KEY_OPERATOR, "NA");
         pin = mSharedPreferences.getString("pin", "NA");
-//        checkSessionTimeout();
         mOperatorDisplayLabel.setVisibility(View.INVISIBLE);
-
-        if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")){
-            mVerifyTicketButton.setVisibility(View.GONE);
-        }
 
         tv_route = findViewById(R.id.tv_route);
         tv_time = findViewById(R.id.tv_time);
         tv_date = findViewById(R.id.tv_date);
 
-        SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+        setupDateAndRouteUI();
 
+        SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
         Date today = new Date();
         String dateToStr = format.format(today);
-
         today_date = db_date_format.format(today);
         qr_today_date = qr_date_format.format(today);
-
         tv_date.setText(dateToStr);
         tv_time.setText(route_departure_time.substring(0, 5));
         tv_route.setText(route_name);
+
+        if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")){
+            mVerifyTicketButton.setVisibility(View.GONE);
+        }
 
         if(action.equals("boarding")) {
             tv_action_performed.setText(getResources().getString(R.string.now_boarding));
@@ -160,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
         mOperatorDisplay.setText(mSharedPreferences.getString(Config.OPERATOR_NAME_SHARED_PREF, getString(R.string.prompt_empty_values)));
         mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
-        //System.out.println("SELECTED TIME: " + mSharedPreferences.getString(Config.SHARED_DEPARTURE_DATE, "NA"));
+        System.out.println("Selected Time: " + mSharedPreferences.getString(Config.SHARED_DEPARTURE_DATE, "NA"));
 
         mVerifyTicketButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -187,25 +192,19 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }
         });
 
-        // get bar code instance from MainActivity
         barcodeReader = RouteActivity.getBarcodeObject();
 
         if (barcodeReader != null) {
-            System.out.println("BARCODE AVAILABLE HERE");
-            // register bar code event listener
+            System.out.println("Barcode Available Here:" + barcodeReader);
             barcodeReader.addBarcodeListener(this);
-            // set the trigger mode to client control
             try {
-                barcodeReader.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                        BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL);
+                barcodeReader.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE, BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL);
                 barcodeReader.setProperty(BarcodeReader.PROPERTY_NOTIFICATION_GOOD_READ_ENABLED, false);
             } catch (UnsupportedPropertyException e) {
                 Toast.makeText(this, "Failed to apply properties", Toast.LENGTH_SHORT).show();
             }
-            // register trigger state change listener
             barcodeReader.addTriggerListener(this);
             Map<String, Object> properties = new HashMap<String, Object>();
-            // Set Symbologies On/Off
             properties.put(BarcodeReader.PROPERTY_CODE_128_ENABLED, true);
             properties.put(BarcodeReader.PROPERTY_GS1_128_ENABLED, true);
             properties.put(BarcodeReader.PROPERTY_QR_CODE_ENABLED, true);
@@ -217,13 +216,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             properties.put(BarcodeReader.PROPERTY_CODABAR_ENABLED, false);
             properties.put(BarcodeReader.PROPERTY_INTERLEAVED_25_ENABLED, false);
             properties.put(BarcodeReader.PROPERTY_PDF_417_ENABLED, false);
-            // Set Max Code 39 barcode length
             properties.put(BarcodeReader.PROPERTY_CODE_39_MAXIMUM_LENGTH, 10);
-            // Turn on center decoding
             properties.put(BarcodeReader.PROPERTY_CENTER_DECODE, true);
-            // Enable bad read response
             properties.put(BarcodeReader.PROPERTY_NOTIFICATION_BAD_READ_ENABLED, true);
-            // Apply the settings
             barcodeReader.setProperties(properties);
         }else{
             if(Build.MODEL.equals("EDA50K") || Build.MODEL.equals("EDA51K")) {
@@ -233,6 +228,58 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }else{
                 mVerifyTicketButton.setVisibility(View.VISIBLE);
             }
+        }
+    }
+
+    private void loadRouteFromJson() {
+        try {
+            String json = mSharedPreferences.getString(Config.PREF_ROUTES_JSON, "");
+            String selectedRouteId  = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_ID, "NA");
+            String selectedRouteName = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_NAME, "NA");
+            String selectedRouteTime = mSharedPreferences.getString(Config.PREF_SELECTED_ROUTE_TIME, "NA");
+            String selectedAction     = mSharedPreferences.getString(Config.PREF_SELECTED_ACTION, "NA");
+
+            System.out.println("Saved Route ID: " + selectedRouteId);
+            System.out.println("Saved Route JSON: " + json);
+            System.out.println("Saved Route Name: " + selectedRouteName);
+            System.out.println("Saved Route Time: " + selectedRouteTime);
+            System.out.println("Saved Action: " + selectedAction);
+
+            route_id = selectedRouteId;
+            route_name = selectedRouteName;
+            route_departure_time = selectedRouteTime;
+            action = selectedAction;
+
+            if (json.isEmpty() || selectedRouteId.equals("NA")) {
+                route_id = "NA";
+                route_name = "NA";
+                route_departure_time = "NA";
+                action = "NA";
+            }
+
+        } catch (Exception e) {
+            route_id = "NA";
+            route_name = "NA";
+            route_departure_time = "NA";
+            action = "NA";
+        }
+    }
+
+
+    private void setupDateAndRouteUI() {
+        Date today = new Date();
+        today_date = db_date_format.format(today);
+        tv_date.setText(new SimpleDateFormat("dd/MM/yyyy").format(today));
+        tv_time.setText(route_departure_time.substring(0, 5));
+        tv_route.setText(route_name);
+        tv_action_performed.setText(
+                action.equals("boarding")
+                        ? getString(R.string.now_boarding)
+                        : getString(R.string.now_verifing)
+        );
+
+        if (action.equals("boarding")) {
+            getDailyTickets(route_id, route_departure_time);
         }
     }
 
@@ -250,13 +297,13 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                System.out.println("Sound starts here");
+                System.out.println("Sound starts here:" + event.getCodeId());
                 mTicketNumberDisplay.setText("Result");
                 if(event.getCodeId().toLowerCase().equals("j")) {
                     searchTicket(event.getBarcodeData());
                 }else if (event.getCodeId().toLowerCase().equals("s")){
-                   extractTicketNumberFromQRCode(event.getBarcodeData());
-                    System.out.println(qr_departure_date + " - " + qr_today_date);
+                    extractTicketNumberFromQRCode(event.getBarcodeData());
+                    System.out.println("Sound Details: " + qr_departure_date + " - " + qr_today_date);
                     if(qr_ticket_number == null){
                         Config.doVibration(MainActivity.this);
                         playSound(R.raw.not_available_beep);
@@ -267,7 +314,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
                         mVerifyTicketButton.setText(R.string.button_scan_sticker);
                         mVerifyTicketButton.setEnabled(true);
-                        return;
                     }else if(!qr_ticket_number.substring(0, 3).equals("ZFF") && !qr_ticket_number.substring(0, 3).equals("ZFA")){
                         Config.doVibration(MainActivity.this);
                         playSound(R.raw.failure_beep);
@@ -290,8 +336,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mVerifyTicketButton.setEnabled(true);
                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
                     }else if(!qr_departure_time.substring(0, 8).equals(route_departure_time.substring(0, 8))){
-                        System.out.println(qr_departure_time);
-                        System.out.println(route_departure_time);
+                        System.out.println("Not for this time: " + qr_departure_time + "Not for this route: " + route_departure_time);
                         Config.doVibration(MainActivity.this);
                         playSound(R.raw.failure_beep);
                         mPassengerNameDisplay.setTextColor(Color.RED);
@@ -302,7 +347,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mVerifyTicketButton.setText(R.string.button_scan_sticker);
                         mVerifyTicketButton.setEnabled(true);
                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
-                   }else if(!qr_route.equals(route_name)){
+                    }else if(!qr_route.equals(route_name)){
                         Config.doVibration(MainActivity.this);
                         playSound(R.raw.failure_beep);
                         mPassengerNameDisplay.setTextColor(Color.RED);
@@ -313,16 +358,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mVerifyTicketButton.setText(R.string.button_scan_sticker);
                         mVerifyTicketButton.setEnabled(true);
                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
-                   } else{
-                       searchTicket(qr_ticket_number);
-                   }
+                    } else{
+                        searchTicket(qr_ticket_number);
+                    }
                 }
             }
         });
     }
 
     private void extractTicketNumberFromQRCode(String qrdata){
-        System.out.println("TICKET EXTRACTION: " + qrdata);
+        System.out.println("Ticket Extraction: " + qrdata);
         if(!qrdata.startsWith("{")){
             qr_ticket_number = null;
         } else {
@@ -340,13 +385,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }catch (JSONException e) {
                 Config.doVibration(MainActivity.this);
                 System.out.println("Barcode Error: " + e);
-                Log.e("QR_PARSE_ERROR", "Invalid QR Code data", e);
             }
         }
     }
 
-    // When using Automatic Trigger control do not need to implement the
-    // onTriggerEvent function
     @Override
     public void onTriggerEvent( TriggerStateChangeEvent event) {
         // TODO Auto-generated method stub
@@ -374,8 +416,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     public void onPause() {
         super.onPause();
         if (barcodeReader != null) {
-            // release the scanner claim so we don't get any scanner
-            // notifications while paused.
             barcodeReader.release();
         }
     }
@@ -384,16 +424,12 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     public void onDestroy() {
         super.onDestroy();
         if (barcodeReader != null) {
-            // unregister barcode event listener
             barcodeReader.removeBarcodeListener(this);
-            // unregister trigger state change listener
             barcodeReader.removeTriggerListener(this);
         }
     }
 
-    //Logout function
     public void logout(){
-        //Creating an alert dialog to confirm logout
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setMessage(R.string.logout_confirmation);
         alertDialogBuilder.setPositiveButton(R.string.yes,
@@ -411,7 +447,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
                     }
                 });
-        //Showing the alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
     }
@@ -419,7 +454,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     private void showManualDialog(){
         manualDialog = new Dialog(this);
         Button btnSearch;
-        //final EditText etUnit_no;
         manualDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         manualDialog.setContentView(R.layout.dialog_add_manual);
         mTicketNumberEditor = manualDialog.findViewById(R.id.et_ticket_number);
@@ -436,8 +470,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 manualDialog.dismiss();
                 mTicketNumber = mTicketNumberEditor.getText().toString();
                 if (!mTicketNumber.startsWith("ZFF") && !mTicketNumber.startsWith("ZFA")) {
-                    // If it doesn't start with "ZFF" or "ZFA", prepend "ZFF"
                     mTicketNumber = "ZFF" + mTicketNumber;
+                    System.out.println("Ticket Number: " + mTicketNumber);
                 }
 
                 mTicketNumberDisplay.setText(getString(R.string.barcode_title_text).replace(getString(R.string.barcode_placeholder), mTicketNumber));
@@ -445,7 +479,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                     JSONObject ticket = mDatabaseAdapter.getTicket(mTicketNumber);
                     if (ticket.has(Config.TICKET_ID)) {
                         try {
-                            // Check if the ticket is already scanned
                             int isScanned = ticket.getInt(Config.TICKET_SCANNED);
                             if (isScanned > 0) {
                                 mPassengerNameDisplay.setText(R.string.ticket_already_scanned);
@@ -474,13 +507,11 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                             return;
                         }
                         processOnlineTicket();
-//                        processTicket(ticket);
                     } else {
                         processOnlineTicket();
                         return;
                     }
                 } else {
-
                     mPassengerNameDisplay.setText(R.string.passenger_not_found);
                     mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                     mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
@@ -500,41 +531,31 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        System.out.println("Logout response" +response);
+                        System.out.println("Logout Response" + response);
                         loading.dismiss();
                         try {
                             JSONObject jsonObject = new JSONObject(response);
-                            JSONArray operatorResult = jsonObject.getJSONArray("operator");
-                            JSONObject operatorData = operatorResult.getJSONObject(0);
-                            result_status = operatorData.getString(Config.KEY_STATUS);
-
+                            System.out.println("Decoded response: " + jsonObject);
+//                            var code = jsonObject.getString("code");
+//                            System.out.println("Code: " + code);
+//                            if(code.toString() == "200"){
+//
+//                            }else{
+//                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            System.out.println("MESSAGE ERROR " + e.getMessage());
+                            System.out.println("Logout Error: " + e.getMessage());
                         }
 
-                        if(result_status.equalsIgnoreCase(Config.LOGOUT_SUCCESS)){
-
-                        }else{
-                            //If the server response is not success
-                            //Displaying an error message on toast
-//                            Toast.makeText(mContext, result_status, Toast.LENGTH_LONG).show();
-                        }
-                        //Getting out sharedpreferences
                         SharedPreferences preferences = getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-                        //Getting editor
                         SharedPreferences.Editor editor = preferences.edit();
-                        //Puting the value false for loggedin
                         editor.putBoolean(Config.LOGGEDIN_SHARED_PREF, false);
-                        //Putting blank value to email
                         editor.putString(Config.OPERATOR_SHARED_PREF, "");
                         editor.putString(Config.OPERATOR_NAME_SHARED_PREF, "");
                         editor.putInt(Config.SHARED_TOTAL_TICKETS, 0);
                         editor.putInt(Config.SHARED_SCANNED_TICKETS, 0);
-                        //Saving the sharedpreferences
                         editor.commit();
                         mDatabaseAdapter.clearDatabase();
-                        //Starting login activity
                         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK );
                         startActivity(intent);
@@ -544,67 +565,47 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        System.out.println("ERROR SIGNOUT: " + error.getMessage());
-                        //You can handle error here if you want
+                        System.out.println("Logout Error Response: " + error.getMessage());
                         loading.dismiss();
                         Toast.makeText(mContext, error.toString(), Toast.LENGTH_LONG).show();
                     }
                 }){
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-
                 Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
-                params.put("operator_no", operator);
+                params.put("username", operator);
+//                params.put("username", "718192");
                 params.put(Config.API_KEY_NAME, Config.API_KEY);
-
-                //returning parameter
+                System.out.println("Logout Params:" + params);
                 return params;
-            }
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
-                String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
-                String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                //System.out.println("CREDENTIALS: " + auth + "\n");
-                headers.put("Authorization", auth);
-                return headers;
             }
         };
 
-        //Adding the string request to the queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(40000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(stringRequest);
     }
 
     private void processTicket(JSONObject ticket) {
         System.out.println("Process Ticket");
         try {
-                Config.doVibration(MainActivity.this);
-                playSound(R.raw.success_beep);
-                mPassengerNameDisplay.setTextColor(Color.parseColor("#358f80"));
-                mPassengerNameDisplay.setText(qr_name);
-                mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_check, 0, 0);
-                mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
-                mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                mSearchTicketButton.setBackgroundColor(Color.parseColor("#186A3B"));
+            Config.doVibration(MainActivity.this);
+            playSound(R.raw.success_beep);
+            mPassengerNameDisplay.setTextColor(Color.parseColor("#358f80"));
+            mPassengerNameDisplay.setText(qr_name);
+            mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_check, 0, 0);
+            mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
+            mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
+            mSearchTicketButton.setBackgroundColor(Color.parseColor("#186A3B"));
             mScannedTickets += 1;
             mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
             mDatabaseAdapter.update(ticket.getString(Config.TICKET_ID), ticket.getInt(Config.TICKET_SCAN_COUNT) + 1);
-
-            //markTicketBoarded();
-            System.out.println("Action: " +  action);
+            System.out.println("Scanned Tickets: " + mScannedTickets + "Scanned Tickets Action: " +  action);
             if(action.equals("boarding")) {
-                System.out.println("Boarding Ticket...");
+                System.out.println("Boarding Ticket:" + ticket);
                 processOnlineTicket();
             }else{
-                System.out.println("Verify Ticket...");
+                System.out.println("Verify Ticket:" + ticket);
                 verifyTicket();
             }
         } catch (JSONException ex) {
@@ -626,7 +627,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                     @Override
                     public void onResponse(String response) {
                         loading.dismiss();
-                        System.out.println("Search Ticket RESPONSE: " + response);
+                        System.out.println("Search Ticket Response: " + response);
                         try {
                             JSONObject responseData = new JSONObject(response);
                             try {
@@ -643,7 +644,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                                         mVerifyTicketButton.setEnabled(true);
                                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
                                     }else if (responseData.getInt(Config.RESPONSE_CODE) == 100){
-                                        System.out.println("TUPO HUMU 🤝");
+                                        System.out.println("Process Online Ticket Data" + responseData);
                                         Config.doVibration(MainActivity.this);
                                         playSound(R.raw.failure_beep);
                                         mPassengerNameDisplay.setTextColor(Color.parseColor("#A93226"));
@@ -725,8 +726,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                                             mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
                                             mSearchTicketButton.setBackgroundColor(Color.parseColor("#186A3B"));
                                         }
-                                        //mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        //mVerifyTicketButton.setEnabled(true);
                                         return;
                                     }
                                     else  if (responseData.getInt(Config.RESPONSE_CODE) == 600) {
@@ -752,38 +751,11 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                                         mVerifyTicketButton.setEnabled(true);
                                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
                                     }
-                                    /*else if (!route_id.equals(route)){
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.route_invalid);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    }else if (!depart_time.equals(route_departure_time)) {
-                                        Config.doVibration(MainActivity.this);
-                                        mPassengerNameDisplay.setTextColor(Color.RED);
-                                        mPassengerNameDisplay.setText(R.string.time_invalid);
-                                        mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                        mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                        mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                        mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                        mVerifyTicketButton.setEnabled(true);
-                                        return;
-                                    } **/
                                 }
-                                //mPassengerNameDisplay.setText(responseData.getString(Config.PASSENGER_NAME));
-                                //mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_tick_box_48, 0, 0);
-                                //mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
-                                //mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
                                 mScannedTickets += 1;
-                                mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
-
-                                //markTicketBoarded();
+                                mOperatorDisplayLabel.setText("SCANNED: " + mScannedTickets);
                             } catch (JSONException ex) {
-                                System.out.println("JSON ERROR: " + ex);
+                                System.out.println("Online Ticket Process Error: " + ex);
                                 mPassengerNameDisplay.setText(R.string.passenger_not_found);
                                 mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                                 mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
@@ -791,7 +763,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                             }
 
                         } catch (JSONException e) {
-                            System.out.println("TICKET ERRORS: " + e.getMessage());
+                            System.out.println("Online Ticket Process: " + e.getMessage());
                             e.printStackTrace();
                             mPassengerNameDisplay.setText(R.string.passenger_not_found);
                             mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
@@ -805,9 +777,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        //You can handle error here if you want
                         loading.dismiss();
-                        System.out.println("VOLLEY: " + error.toString());
+                        System.out.println("On Error Response: " + error.toString());
                         mPassengerNameDisplay.setText(R.string.no_tickets_found);
                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_info_48, 0, 0);
                         mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
@@ -818,49 +789,38 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 }){
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-
                 Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
                 params.put("reference", mTicketNumber);
                 params.put("time", route_departure_time);
                 params.put("date", today_date);
                 params.put("operator", operator);
                 params.put("pin", pin);
                 params.put("route", route_id);
-
-                System.out.println("SEARCH REQUEST: " + params);
-                //returning parameter
+                System.out.println("Process Online Ticket Params: " + params);
                 return params;
             }
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                System.out.println("CREDENTIALS: " + auth + "\n");
+                System.out.println("Process Online Ticket Credentials: " + auth + "\n");
                 headers.put("Authorization", auth);
                 return headers;
             }
         };
 
-        //Adding the string request to the queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(40000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(stringRequest);
     }
 
     private void verifyTicket() {
-
         final ProgressDialog loading;
         loading = ProgressDialog.show(mContext, "Verifying...", "Please wait...", false, false);
         StringRequest stringRequest = new StringRequest(Request.Method.POST, Config.VERIFY_TICKET_URL,
                 response -> {
-                    System.out.println("Verify Ticket RESPONSE: " + response);
+                    System.out.println("Verify Ticket Response:" + response);
                     loading.dismiss();
                     try {
                         JSONObject responseData = new JSONObject(response);
@@ -969,8 +929,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                                         mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
                                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#186A3B"));
                                     }
-                                    //mVerifyTicketButton.setText(R.string.button_scan_sticker);
-                                    //mVerifyTicketButton.setEnabled(true);
                                     return;
                                 } else  if (responseData.getInt(Config.RESPONSE_CODE) == 600) {
                                     Config.doVibration(MainActivity.this);
@@ -1009,17 +967,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
                             }
                             mScannedTickets += 1;
-                            mOperatorDisplayLabel.setText("SCANNED: " + Integer.toString(mScannedTickets));
+                            mOperatorDisplayLabel.setText("SCANNED: " + mScannedTickets);
                         } catch (JSONException ex) {
-
-                            System.out.println("JSON ERROR: " + ex);
+                            System.out.println("Verify Ticket Error: " + ex);
                             mPassengerNameDisplay.setText(R.string.passenger_not_found);
                             mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                             mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
                             mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
                         }
                     } catch (JSONException e) {
-                        System.out.println("TICKET ERRORS: " + e.getMessage());
+                        System.out.println("Error During Verify Ticket: "  + e.getMessage());
                         e.printStackTrace();
                         mPassengerNameDisplay.setText(R.string.passenger_not_found);
                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
@@ -1033,8 +990,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         loading.dismiss();
-                        //You can handle error here if you want
-                        System.out.println("VOLLEY: " + error.toString());
+                        System.out.println("Error Verify Ticket Volley: "  + error.toString());
                         mPassengerNameDisplay.setText(R.string.no_tickets_found);
                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_info_48, 0, 0);
                         mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
@@ -1045,39 +1001,29 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 }){
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-
                 Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
                 params.put("reference", mTicketNumber);
                 params.put("time", route_departure_time);
                 params.put("date", today_date);
                 params.put("operator", operator);
                 params.put("pin", pin);
                 params.put("route", route_id);
-
-                System.out.println("VERIFY REQUEST PARAMS: " + params);
-                //returning parameter
+                System.out.println("Verify Ticket Params: "  + params);
                 return params;
             }
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                System.out.println("CREDENTIALS: " + auth + "\n");
+                System.out.println("Verify Ticket Credentials: "  + auth + "\n");
                 headers.put("Authorization", auth);
                 return headers;
             }
         };
 
-        //Adding the string request to the queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(40000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(stringRequest);
     }
 
@@ -1089,22 +1035,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
                         try {
                             JSONObject responseData = new JSONObject(response);
-                            System.out.println(responseData.toString());
-                            /*try {
-                                mPassengerNameDisplay.setText(responseData.getString(Config.PASSENGER_NAME));
-                                mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_tick_box_48, 0, 0);
-                                mTicketNumberDisplay.setTextColor(Color.rgb(24, 106, 59));
-                                mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_success_display_border));
-                                ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
-                                toneGen1.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT,150);
-                            } catch (JSONException ex) {
-                                ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
-                                toneGen1.startTone(ToneGenerator.TONE_CDMA_CALLDROP_LITE,150);
-                                mPassengerNameDisplay.setText(R.string.passenger_not_found);
-                                mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
-                                mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
-                                mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
-                            }*/
+                            System.out.println("Update Ticket:" + responseData);
 
                         } catch (JSONException e) {
                             System.out.println("TICKET ERRORS MARK TICKET: " + e.getMessage());
@@ -1115,50 +1046,39 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        //You can handle error here if you wan
-                        System.out.println(error.toString());
+                        System.out.println("Update Ticket Error: " + error.toString());
                     }
                 }){
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 String operator = mSharedPreferences.getString(Config.OPERATOR_SHARED_PREF, "0");
                 Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
                 params.put("ticket_id", mTicketNumber);
                 params.put("boarding_status", "YES");
                 params.put("operator_id", operator);
                 params.put("device_id", getIMEI());
+                System.out.println("Update Ticket Params: " + params);
                 params.put(Config.API_KEY_NAME, Config.API_KEY);
-
-                //returning parameter
                 return params;
             }
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                System.out.println("CREDENTIALS: " + auth + "\n");
+                System.out.println("Update Ticket Credentials: " + auth);
                 headers.put("Authorization", auth);
                 return headers;
             }
         };
 
-        //Adding the string request to the queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(40000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(stringRequest);
     }
 
     private class GetTicketNumberTask extends AsyncTask<Void, Void, Exception> {
         String message;
-
-
         @Override
         protected Exception doInBackground(Void... params) {
             Exception result = null;
@@ -1177,7 +1097,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
             mVerifyTicketButton.setText(R.string.operating);
             mVerifyTicketButton.setEnabled(false);
         }
@@ -1185,12 +1104,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         @Override
         protected void onPostExecute(Exception result) {
             super.onPostExecute(result);
-
             Config.doVibration(MainActivity.this);
             ToneGenerator toneGen1 = new ToneGenerator(AudioManager.USE_DEFAULT_STREAM_TYPE, 50);
             toneGen1.startTone(ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK,150);
-
-
             if(result == null){
                 searchTicket(message);
             }else {
@@ -1206,10 +1122,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         mTicketNumberDisplay.setText(getString(R.string.barcode_title_text).replace(getString(R.string.barcode_placeholder), mTicketNumber));
         if (mTicketNumber != null && mTicketNumber.length() > 0) {
             JSONObject ticket = mDatabaseAdapter.getTicket(mTicketNumber);
-
             if (ticket.has(Config.TICKET_ID)) {
                 try {
-                    // Check if the ticket is already scanned
                     int isScanned = ticket.getInt(Config.TICKET_SCANNED);
                     if(!mTicketNumber.substring(0, 3).equals("ZFF") && !mTicketNumber.substring(0, 3).equals("ZFA")){
                         Config.doVibration(MainActivity.this);
@@ -1241,7 +1155,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                         mPassengerNameDisplay.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.icons8_close_window_48, 0, 0);
                         mTicketNumberDisplay.setTextColor(Color.rgb(169, 50, 38));
                         mTicketNumberDisplay.setBackground(getResources().getDrawable(R.drawable.ticket_failure_display_border));
-                     //   toneGen1.startTone(ToneGenerator.TONE_CDMA_CALLDROP_LITE,150);
                         mVerifyTicketButton.setText(R.string.button_scan_sticker);
                         mVerifyTicketButton.setEnabled(true);
                         mSearchTicketButton.setBackgroundColor(Color.parseColor("#A93226"));
@@ -1261,20 +1174,18 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 }
 
                 if(action.equals("boarding")) {
-                    System.out.println("Boarding Ticket...");
+                    System.out.println("Boarding Ticket:" + mTicketNumber);
                     processOnlineTicket();
-                   // processTicket(ticket);
                 }else{
-                    System.out.println("Verify Ticket...");
+                    System.out.println("Verify Ticket:" + mTicketNumber);
                     verifyTicket();
                 }
-
             } else {
                 if(action.equals("boarding")) {
-                    System.out.println("Boarding Ticket...");
+                    System.out.println("Boarding Ticket:" + mTicketNumber);
                     processOnlineTicket();
                 }else{
-                    System.out.println("Verify Ticket...");
+                    System.out.println("Verify Ticket:" + mTicketNumber);
                     verifyTicket();
                 }
                 return;
@@ -1294,22 +1205,17 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         String IMEI = "";
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
                 != PackageManager.PERMISSION_GRANTED) {
-            // We do not have this permission. Let's ask the user
-            //Activity.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, 0);
             IMEI = "IMEI UNAVAILABLE";
         }else {
             TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
             IMEI = tm.getDeviceId();
-
         }
         return IMEI;
     }
 
 
-    //option menu at the top
     @Override
     public boolean onCreateOptionsMenu( Menu menu) {
-        //Adding our menu_main to toolbar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
         return true;
@@ -1319,13 +1225,12 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     public boolean onOptionsItemSelected( MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.menuLogout) {
-            //calling logout method when the logout button is clicked
             logout();
         }else if (id == R.id.menuChangeLocation) {
-                Intent intent = new Intent(MainActivity.this, RouteActivity.class);
-                intent.putExtra("action",action);
-                startActivity(intent);
-                finish();
+            Intent intent = new Intent(MainActivity.this, RouteActivity.class);
+            intent.putExtra("action",action);
+            startActivity(intent);
+            finish();
         }else if (id == R.id.menuChangeMode) {
             Intent intent = new Intent(MainActivity.this, ModeActivity.class);
             startActivity(intent);
@@ -1344,33 +1249,34 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.Listener<String>(){
                     @Override
                     public void onResponse(String response) {
-                        System.out.println("BOOKINGS: " + response);
+                        System.out.println("Get Daily Tickets Response: " + response);
                         JSONArray tickets;
                         try {
                             JSONObject jsonObject = new JSONObject(response);
                             tickets = jsonObject.getJSONArray("tickets");
                             mDatabaseAdapter.clearDatabase();
-
+                            System.out.println("Get Daily Tickets: " + tickets);
                             for (int i = 0; i < tickets.length(); i++){
                                 JSONObject ticket = tickets.getJSONObject(i);
-                                    long id = mDatabaseAdapter.insertData(
-                                            ticket.getString("id"),
-                                            ticket.getString("ticket_number"),
-                                            ticket.getString("txt_name"),
-                                            ticket.getString("age"),
-                                            ticket.getString("departure_date"),
-                                            ticket.getString("departure_time"),
-                                            ticket.getString("ticket_status"),
-                                            0,
-                                            ticket.getString("ticket_status"),
-                                            0);
-                                    if (id > 1) {
-                                        mTotalTickets += 1;
-                                    }
-                                    System.out.println("TICKET: " + ticket.getString("ticket_number"));
+                                long id = mDatabaseAdapter.insertData(
+                                        ticket.getString("id"),
+                                        ticket.getString("ticket_number"),
+                                        ticket.getString("txt_name"),
+                                        ticket.getString("age"),
+                                        ticket.getString("departure_date"),
+                                        ticket.getString("departure_time"),
+                                        ticket.getString("ticket_status"),
+                                        0,
+                                        ticket.getString("ticket_status"),
+                                        0);
+                                System.out.println("Daily Tickets: " + ticket);
+                                if (id > 1) {
+                                    mTotalTickets += 1;
                                 }
+                                System.out.println("Daily Tickets Number: " + ticket.getString("ticket_number"));
+                            }
                         } catch (JSONException e) {
-                            System.out.println("TICKETS ERRORS: " + e.getMessage());
+                            System.out.println("Daily Tickets Number Error: " + e.getMessage());
                             e.printStackTrace();
                         }
                     }
@@ -1378,44 +1284,35 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        //You can handle error here if you wan
-
-                        //Toast.makeText(mContext, error.toString(), Toast.LENGTH_LONG).show();
-                        System.out.println(error.toString());
+                        System.out.println("Daily Tickets Number Volley Error: "+ error.toString());
                     }
                 }){
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-
                 Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
                 params.put("date", formattedDate);
                 params.put("route", route_id);
                 params.put("time", route_departure_time);
                 params.put("operator", operator);
                 params.put("pin", pin);
-                System.out.println("Scan parameters: " + params);
-                //returning parameter
+                System.out.println("Daily Tickets Number Parameters: " + params);
                 return params;
             }
+
+
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
                 headers.put("Authorization", auth);
+                System.out.println("Daily Tickets Number Headers: " + headers);
                 return headers;
             }
         };
 
-        //Adding the string request to the queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(40000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(stringRequest);
     }
 
@@ -1429,7 +1326,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         childDialog.setCancelable(false);
         childDialog.setCanceledOnTouchOutside(true);
         childDialog.show();
-
     }
 
 }

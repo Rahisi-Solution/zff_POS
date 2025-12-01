@@ -29,9 +29,7 @@ public class TicketDatabaseAdapter {
         contentValues.put(Config.TICKET_SCANNED, scanned);
         contentValues.put(Config.TICKET_STATUS, status);
         contentValues.put(Config.TICKET_SCAN_COUNT, count);
-
         long id = db.insert(Config.TICKET_TABLE_NAME, null, contentValues);
-
         return id;
     }
 
@@ -52,7 +50,6 @@ public class TicketDatabaseAdapter {
                 System.out.print(e.getMessage());
             }
         }
-
         cursor.close();
         return tickets;
     }
@@ -62,7 +59,6 @@ public class TicketDatabaseAdapter {
         String[] columns = {Config.TICKET_ID, Config.BOOKING_ID, Config.TICKET_NUMBER, Config.PASSENGER_NAME, Config.PASSENGER_AGE,
                 Config.DEPARTURE_DATE, Config.DEPARTURE_TIME, Config.BOARDING, Config.TICKET_SCANNED, Config.TICKET_STATUS, Config.TICKET_SCAN_COUNT};
         Cursor cursor = db.query(Config.TICKET_TABLE_NAME, columns, Config.TICKET_NUMBER + "=?", new String[]{id}, null, null, null);
-
         cursor.moveToFirst();
         JSONObject ticket = new JSONObject();
         try {
@@ -83,39 +79,26 @@ public class TicketDatabaseAdapter {
         contentValues.put(Config.BOARDING, "YES");
         contentValues.put(Config.TICKET_SCAN_COUNT, counter);
         String[] whereArgs = {id};
-
         int count = db.update(Config.TICKET_TABLE_NAME, contentValues, Config.TICKET_ID + " = ?", whereArgs);
-
         return count;
     }
 
     public int delete(String id) {
         SQLiteDatabase db = ticketDatabaseHelper.getWritableDatabase();
         String[] whereArgs = {id};
-
         int count = db.delete(Config.TICKET_TABLE_NAME, Config.TICKET_ID + " = ?", whereArgs);
-
         return count;
     }
 
     public int clearDatabase() {
         SQLiteDatabase db = ticketDatabaseHelper.getWritableDatabase();
         int count = db.delete(Config.TICKET_TABLE_NAME, null, null);
-
         return count;
     }
 
     static class TicketDatabaseHelper extends SQLiteOpenHelper {
-        public static final String CREATE_TABLE = "CREATE TABLE " + Config.TICKET_TABLE_NAME +
-                " (" + Config.TICKET_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                Config.BOOKING_ID + " TEXT, " + Config.TICKET_NUMBER + " TEXT, " +
-                Config.PASSENGER_NAME + " TEXT, " + Config.PASSENGER_AGE + " TEXT, " +
-                Config.DEPARTURE_DATE + " TEXT, " + Config.DEPARTURE_TIME + " TEXT, " +
-                Config.BOARDING + " TEXT, " + Config.TICKET_SCANNED + " INTEGER, " +
-                Config.TICKET_STATUS + " TEXT, " + Config.TICKET_SCAN_COUNT + " INTEGER);";
-
+        public static final String CREATE_TABLE = "CREATE TABLE " + Config.TICKET_TABLE_NAME + " (" + Config.TICKET_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + Config.BOOKING_ID + " TEXT, " + Config.TICKET_NUMBER + " TEXT, " + Config.PASSENGER_NAME + " TEXT, " + Config.PASSENGER_AGE + " TEXT, " + Config.DEPARTURE_DATE + " TEXT, " + Config.DEPARTURE_TIME + " TEXT, " + Config.BOARDING + " TEXT, " + Config.TICKET_SCANNED + " INTEGER, " + Config.TICKET_STATUS + " TEXT, " + Config.TICKET_SCAN_COUNT + " INTEGER);";
         public static final String DROP_TABLE = "DROP TABLE IF EXISTS " + Config.TICKET_TABLE_NAME;
-
         public Context context;
 
         public TicketDatabaseHelper(Context context) {

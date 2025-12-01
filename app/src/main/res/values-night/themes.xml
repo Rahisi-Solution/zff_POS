@@ -1,0 +1,159 @@
+<resources>
+<!-- Base application theme. -->
+<style name="Base.AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Customize your theme here. -->
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorAccent</item>
+    <item name="android:actionBarStyle">@style/MyActionBar</item>
+    <!-- Support library compatibility -->
+    <item name="actionBarStyle">@style/MyActionBar</item>
+</style>
+
+<style name="AppTheme.NoActionBar">
+    <item name="windowActionBar">false</item>
+    <item name="windowNoTitle">true</item>
+</style>
+
+<style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+
+</style>
+
+<style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+<style name="NoTitleDialog" parent="@style/Theme.AppCompat.Dialog">
+    <item name="windowNoTitle">true</item>
+</style>
+
+<!-- ActionBar styles -->
+<style name="MyActionBar" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+    <item name="android:background">@drawable/action_bar_background</item>
+    <!-- Support library compatibility -->
+    <item name="background">@drawable/action_bar_background</item>
+</style>
+
+<style name="button_select_port">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">36dp</item>
+    <item name="android:layout_marginLeft">16dp</item>
+    <item name="android:layout_marginRight">16dp</item>
+    <item name="android:textSize">24dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#D98880</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_validate_ticket">
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">0dp</item>
+    <item name="android:layout_marginLeft">16dp</item>
+    <item name="android:layout_marginRight">8dp</item>
+    <item name="android:textSize">18dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#D98880</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_ticket_manual">
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">0dp</item>
+    <item name="android:layout_marginLeft">8dp</item>
+    <item name="android:layout_marginRight">16dp</item>
+    <item name="android:textSize">18dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#D98880</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_change_location">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">32dp</item>
+    <item name="android:layout_marginLeft">16dp</item>
+    <item name="android:layout_marginRight">16dp</item>
+    <item name="android:textSize">16dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#A9CCE3</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_login">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">16dp</item>
+    <item name="android:textSize">16dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#D7BDE2</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_save_property">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">36dp</item>
+    <item name="android:textSize">24dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#B7950B</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_scan_barcode">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">32dp</item>
+    <item name="android:layout_marginBottom">16dp</item>
+    <item name="android:padding">32dp</item>
+    <item name="android:textSize">20dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:shadowColor">#D98880</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+<style name="button_logout">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#F8F9F9</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_marginTop">16dp</item>
+    <item name="android:layout_marginLeft">16dp</item>
+    <item name="android:layout_marginRight">16dp</item>
+    <item name="android:textSize">16dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:shadowColor">#A9CCE3</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+</style>
+
+</resources>

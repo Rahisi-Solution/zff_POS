@@ -1,12 +1,10 @@
 package com.rahisi.zffboarding;
 
-import android.app.ActivityManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -14,8 +12,6 @@ import android.util.Base64;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,9 +23,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.snackbar.Snackbar;
@@ -42,17 +35,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * A login screen that offers login via code/key.
- */
 public class LoginActivity extends AppCompatActivity {
-    // UI references.
-    private EditText mOperatorCodeView;
-    private EditText mOperatorKeyView;
-    private Button mOperatorSignInButton;
-    private boolean loggedIn = false;
+    private EditText usernameField;
+    private EditText passwordField;
+    private Button loginButton;
+    private Button forgotPasswordButton;
     private Context mContext = LoginActivity.this;
-    View parentLayout;
+    private View parentLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,221 +49,203 @@ public class LoginActivity extends AppCompatActivity {
         Locale.setDefault(locale);
         Configuration configuration = new Configuration();
         configuration.locale = locale;
-        getBaseContext().getResources().updateConfiguration(configuration, getBaseContext().getResources().getDisplayMetrics());
-        parentLayout = findViewById(android.R.id.content);
+        getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        parentLayout = findViewById(android.R.id.content);
 
-        // Set up the login form.
-        mOperatorCodeView = findViewById(R.id.operator_code);
-        mOperatorKeyView = findViewById(R.id.operator_key);
-        mOperatorKeyView.setOnKeyListener(new View.OnKeyListener() {
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                // If the event is a key-down event on the "enter" button
-                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    hideOnScreenKeyboard();
-                    if(isOnline(LoginActivity.this)) {
-                        login();
-                        System.out.println("KEY PRESSED: " + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
-                    } else {
-//                        Toast.makeText(mContext, R.string.no_internet_connection, Toast.LENGTH_LONG).show();
-                        showSnackBar(R.string.no_internet_connection + "");
-                        return false;
-                    }
-//                    login();
-                }
-                return false;
+        usernameField = findViewById(R.id.operator_code);
+        passwordField = findViewById(R.id.operator_key);
+        loginButton = findViewById(R.id.operator_sign_in_button);
+        forgotPasswordButton = findViewById(R.id.operator_forgot_password);
+
+        passwordField.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+                hideKeyboard();
+                if (isOnline(mContext)) login();
+                else showSnackBar("No internet connection. Connect to continue.");
             }
-        });
-
-        mOperatorSignInButton = findViewById(R.id.operator_sign_in_button);
-        mOperatorSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(isOnline(LoginActivity.this)) {
-                    login();
-                    System.out.println("KEY PRESSED: " + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
-                } else {
-                    System.out.println("NO INTERNET CONNECTION" + mOperatorCodeView.getText().toString() + " " + mOperatorKeyView.getText().toString());
-                    showSnackBar("No internet connection, connect to the internet to continue");
-//                    Toast.makeText(mContext, R.string.no_internet_connection, Toast.LENGTH_LONG).show();
-//                    return false;
-                }
-//                login();
-            }
-        });
-    }
-
-    // Check Device internet connectivity
-    public static boolean isOnline(Context context){
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(CONNECTIVITY_SERVICE);
-
-        if(connectivityManager != null) {
-            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-            return activeNetwork != null && activeNetwork.isConnected();
-        } else {
             return false;
-        }
+        });
+
+        loginButton.setOnClickListener(v -> {
+            if (isOnline(mContext)) login();
+            else showSnackBar("No internet connection");
+        });
+
+        forgotPasswordButton.setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, ResetPasswordActivity.class));
+        });
     }
 
-    void showSnackBar(String displayMessage) {
-        Snackbar snackbar;
-        snackbar = Snackbar.make(parentLayout, displayMessage, Snackbar.LENGTH_SHORT);
-        View snack_view = snackbar.getView();
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)snack_view.getLayoutParams();
+    public static boolean isOnline(Context ctx) {
+        ConnectivityManager cm = (ConnectivityManager) ctx.getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        return ni != null && ni.isConnected();
+    }
+
+    private void showSnackBar(String message) {
+        Snackbar snackbar = Snackbar.make(parentLayout, message, Snackbar.LENGTH_LONG);
+        View view = snackbar.getView();
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
         params.gravity = Gravity.BOTTOM;
-        snack_view.setBackgroundColor(0xFFe56b6f);
+        view.setLayoutParams(params);
+        view.setBackgroundColor(0xFFe56b6f);
         snackbar.show();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //In onresume fetching value from sharedpreference
-        SharedPreferences sharedPreferences = getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-        //Fetching the boolean value form sharedpreferences
-        loggedIn = sharedPreferences.getBoolean(Config.LOGGEDIN_SHARED_PREF, false);
-        //loggedIn = true;
-        //If we will get true
-        if(loggedIn){
-            //We will start the Profile Activity
-            Intent intent = new Intent(mContext, MainActivity.class);
-            startActivity(intent);
+        SharedPreferences sp = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
+        boolean loggedIn = sp.getBoolean(Config.LOGGEDIN_SHARED_PREF, false);
+        if (loggedIn) {
+            startActivity(new Intent(mContext, MainActivity.class));
+            finish();
         }
     }
 
-    private void login(){
-        //Getting values from edit texts
-        final String operator = mOperatorCodeView.getText().toString().trim();
-        final String pin = mOperatorKeyView.getText().toString().trim();
+    private void login() {
+        String username = usernameField.getText().toString().trim();
+        String password = passwordField.getText().toString().trim();
+        System.out.println("Operator Username: " + username + "Operator Password: " + password);
+        if (username.isEmpty() || password.isEmpty()) {
+            showSnackBar("Both username and password are required.");
+            return;
+        }
 
-        final ProgressDialog loading;
-        loading = ProgressDialog.show(mContext, "Signing in...", "Please wait...", false, false);
-
-        //Creating a string request
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, Config.LOGIN_URL,
-                new Response.Listener<String>() {
-                    // required for operator
-                    String result_status = "";
-                    String result_message = "";
-                    String operator_name = "";
-                    JSONArray routes;
-                    @Override
-                    public void onResponse(String response) {
-                        System.out.println(response);
-                        loading.dismiss();
-                        try {
-                            JSONObject jsonObject = new JSONObject(response);
-                            JSONArray operatorResult = jsonObject.getJSONArray("operator");
-                            routes = jsonObject.getJSONArray("routes");
-                            JSONObject operatorData = operatorResult.getJSONObject(0);
-                            result_status = operatorData.getString(Config.KEY_STATUS);
-                            result_message = operatorData.optString("message", "");
-                            operator_name = operatorData.getString(Config.KEY_OPERATOR_NAME);
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            System.out.println("MESSAGE ERROR " + e.getMessage());
+        ProgressDialog loading = ProgressDialog.show(mContext, "Signing in...", "Please wait...", false, false);
+        StringRequest loginReq = new StringRequest(Request.Method.POST, Config.LOGIN_URL,
+                response -> {
+                    System.out.println("Operator Login Response: " + response);
+                    loading.dismiss();
+                    try {
+                        JSONObject root = new JSONObject(response).getJSONObject("response");
+                        int code = root.getInt("code");
+                        String message = root.optString("message", "No message");
+                        if (code == 200) {
+                            JSONObject user = root.getJSONObject("data").getJSONObject("user_details");
+                            String loginId = user.optString("login_credential_id", "");
+                            String userId = user.optString("user_id", "");
+                            String usernameResp = user.optString("username", "");
+                            String domain = user.optString("domain", "");ge
+                            String token = user.optString("token", "");
+                            saveLoginInfo(loginId, userId, usernameResp, domain, token);
+                            SharedPreferences preferences = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
+                            preferences.edit().putString(Config.KEY_OPERATOR, username).apply();
+                            fetchRoutesAndOpenMain();
+                        } else if (code == 100) {
+                            showSnackBar(message);
+                        } else {
+                            Toast.makeText(mContext, message, Toast.LENGTH_LONG).show();
                         }
 
-                        if(result_status.equalsIgnoreCase(Config.LOGIN_SUCCESS)){
-//                        if(result_status.equalsIgnoreCase("failed")){
-                            //Creating a shared preference
-                            SharedPreferences sharedPreferences = mContext.getSharedPreferences(Config.SHARED_PREF_NAME, Context.MODE_PRIVATE);
-                            //Creating editor to store values to shared preferences
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            //Adding values to editor
-                            editor.putBoolean(Config.LOGGEDIN_SHARED_PREF, true);
-                            editor.putString(Config.OPERATOR_NAME_SHARED_PREF, operator_name);
-                            editor.putString("pin", pin);
-                            editor.putString("operator", operator);
-                            editor.putString("routes", routes.toString());
-                            editor.putLong("login_time", System.currentTimeMillis());
-                            //Saving values to editor
-                            editor.commit();
-                            //Starting  activity
-                            Intent intent = new Intent(mContext, ModeActivity.class);
-                            intent.putExtra("UID","LoginActivity");
-                            startActivity(intent);
-                            finish();
-                        }else{
-                            System.out.println("Message value: " + result_message);
-                            //If the server response is not success
-                            //Displaying an error message on toast
-                            if(result_message.equals("")){
-                                Toast.makeText(mContext, R.string.failed_login, Toast.LENGTH_LONG).show();
-                            } else{
-                                Toast.makeText(mContext, result_message, Toast.LENGTH_LONG).show();
-                            }
-                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(mContext, "Invalid server response", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
                     }
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println("ERROR: " + error.getMessage());
-                        //You can handle error here if you wan
-                        loading.dismiss();
-                        Toast.makeText(mContext, error.toString(), Toast.LENGTH_LONG).show();
-                    }
-                }){
+
+                error -> {
+                    loading.dismiss();
+                    Toast.makeText(mContext, "Server error: " + error.toString(), Toast.LENGTH_LONG).show();
+                }) {
+
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-
-                Map<String,String> params = new HashMap<>();
-                //Adding parameters to request
-                params.put("operator_no", operator);
-                params.put("operator_pin", pin);
-                params.put("user_device_id", "1");
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                params.put("password", password);
                 params.put(Config.API_KEY_NAME, Config.API_KEY);
-                System.out.println("Parameters za login: " + params);
-                //returning parameter
+                System.out.println("Operator Login Params: " + params);
                 return params;
             }
+
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String,String> headers = new HashMap<>();
-                // add headers <key,value>
+                Map<String, String> headers = new HashMap<>();
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                //System.out.println("CREDENTIALS: " + auth + "\n");
+                System.out.println("Operator Login Headers: " + auth);
                 headers.put("Authorization", auth);
                 return headers;
             }
         };
 
-        //Adding the string request to the queue
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
-                40000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-        );
-        requestQueue.add(stringRequest);
+        loginReq.setRetryPolicy(new DefaultRetryPolicy(30000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        Volley.newRequestQueue(this).add(loginReq);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        System.gc();
-        ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
-        activityManager.moveTaskToFront(getTaskId(), 0);
+    private void fetchRoutesAndOpenMain() {
+        ProgressDialog loading = ProgressDialog.show(this, "Loading routes...", "Please wait...", false, false);
+        StringRequest req = new StringRequest(Request.Method.POST, Config.SPLASH_URL,
+                response -> {
+                    System.out.println("Operator Route Response: " + response);
+                    loading.dismiss();
+                    try {
+                        JSONObject root = new JSONObject(response).getJSONObject("response");
+                        int code = root.optInt("code", 0);
+                        String message = root.optString("message", "No message");
+                        if (code == 200 && root.has("data")) {
+                            JSONArray routes = root.getJSONArray("data");
+                            if (routes.length() == 0) {
+                                Toast.makeText(this, "No routes available from server.", Toast.LENGTH_LONG).show();
+                            } else {
+                                saveRoutesJson(routes.toString());
+                            }
+                        } else {
+                            Toast.makeText(this, "Failed to load routes: " + message, Toast.LENGTH_LONG).show();
+                        }
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Invalid route response", Toast.LENGTH_LONG).show();
+                    }
+                    startActivity(new Intent(this, ModeActivity.class));
+                    finish();
+                },
+                error -> {
+                    loading.dismiss();
+                    Toast.makeText(this, "Error: " + error.toString(), Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(this, MainActivity.class));
+                    finish();
+                }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
+                String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+                System.out.println("Splash Headers Authorization: " + auth);
+                headers.put("Authorization", auth);
+                return headers;
+            }
+        };
+
+        req.setRetryPolicy(new DefaultRetryPolicy(30000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        Volley.newRequestQueue(this).add(req);
     }
 
-    @Override
-    public void onBackPressed() {
-
+    private void saveRoutesJson(String json) {
+        SharedPreferences sp = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
+        sp.edit().putString(Config.PREF_ROUTES_JSON, json).apply();
     }
 
-    public void hideOnScreenKeyboard(){
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(mOperatorCodeView.getWindowToken(),
-                InputMethodManager.RESULT_UNCHANGED_SHOWN);
+    private void saveLoginInfo(String loginId, String userId, String username, String domain, String token) {
+        SharedPreferences sp = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor ed = sp.edit();
+        ed.putBoolean(Config.LOGGEDIN_SHARED_PREF, true);
+        ed.putString("login_credential_id", loginId);
+        ed.putString("user_id", userId);
+        ed.putString("username", username);
+        ed.putString("domain", domain);
+        ed.putString("token", token);
+        ed.putLong("login_time", System.currentTimeMillis());
+        ed.apply();
     }
 
-
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(passwordField.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+    }
 }
-

@@ -19,9 +19,9 @@ public class LogExceptions {
     public static void saveLog(String file, String line, String message, String trace, Context context) throws JSONException {
 
         StringRequest request = new StringRequest(Request.Method.POST, Config.REPORT_ERROR_LOG, response -> {
-            Log.d("Save log Response", response);
+            System.out.println("Save log Response: " + response);
         }, error -> {
-            Log.e("Save log Error", String.valueOf(error));
+            System.out.println("Save log Error: " + error);
         }) {
             @NonNull
             @Override
@@ -35,7 +35,7 @@ public class LogExceptions {
                 params.put("project_code", "ZFF001");
                 params.put("url", Config.REPORT_ERROR_LOG);
                 params.put("occurrence_date", "2022-10-12");
-                Log.e("getParams", String.valueOf(params));
+                System.out.println("Report Log Params: " + params);
                 return params;
             }
         };

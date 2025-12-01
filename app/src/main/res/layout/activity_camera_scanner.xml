@@ -36,7 +36,6 @@
         app:layout_constraintTop_toBottomOf="@+id/scan_title"
         tools:layout_editor_absoluteX="0dp" />
 
-
     <com.journeyapps.barcodescanner.DecoratedBarcodeView
         android:id="@+id/zxing_barcode_scanner"
         android:layout_width="408dp"
@@ -70,4 +69,5 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/zxing_barcode_scanner" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

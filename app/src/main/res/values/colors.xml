@@ -8,4 +8,6 @@
     <color name="registration_text_color">#aaaaaa</color>
     <color name="action_bar_center">#0E6655</color>
     <color name="action_bar_edge">#138D75</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary_color">#002244</color>
 </resources>

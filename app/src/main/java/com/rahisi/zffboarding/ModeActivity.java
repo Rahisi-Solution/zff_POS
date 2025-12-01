@@ -9,9 +9,10 @@ import android.widget.ProgressBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class ModeActivity extends AppCompatActivity {
-
-    Button btn_boarding, btn_verify;
+    Button btn_boarding;
+    Button btn_verify;
     public ProgressBar progressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,7 +24,6 @@ public class ModeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 progressBar.setVisibility(View.VISIBLE);
-                //Starting  activity
                 Intent intent = new Intent(ModeActivity.this, RouteActivity.class);
                 intent.putExtra("action","boarding");
                 startActivity(intent);
@@ -36,7 +36,6 @@ public class ModeActivity extends AppCompatActivity {
         btn_verify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //Starting  activity
                 progressBar.setVisibility(View.VISIBLE);
                 Intent intent = new Intent(ModeActivity.this, RouteActivity.class);
                 intent.putExtra("action","verify");
