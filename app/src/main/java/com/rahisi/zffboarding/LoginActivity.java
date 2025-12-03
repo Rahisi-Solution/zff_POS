@@ -1,6 +1,5 @@
 package com.rahisi.zffboarding;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,11 +15,11 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
@@ -39,8 +38,8 @@ public class LoginActivity extends AppCompatActivity {
     private EditText usernameField;
     private EditText passwordField;
     private Button loginButton;
-    private Button forgotPasswordButton;
-    private Context mContext = LoginActivity.this;
+    private ProgressBar loginProgress;
+    private final Context mContext = LoginActivity.this;
     private View parentLayout;
 
     @Override
@@ -59,7 +58,8 @@ public class LoginActivity extends AppCompatActivity {
         usernameField = findViewById(R.id.operator_code);
         passwordField = findViewById(R.id.operator_key);
         loginButton = findViewById(R.id.operator_sign_in_button);
-        forgotPasswordButton = findViewById(R.id.operator_forgot_password);
+        Button forgotPasswordButton = findViewById(R.id.operator_forgot_password);
+        loginProgress = findViewById(R.id.login_progress);
 
         passwordField.setOnKeyListener((v, keyCode, event) -> {
             if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
@@ -75,9 +75,7 @@ public class LoginActivity extends AppCompatActivity {
             else showSnackBar("No internet connection");
         });
 
-        forgotPasswordButton.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, ResetPasswordActivity.class));
-        });
+        forgotPasswordButton.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ResetPasswordActivity.class)));
     }
 
     public static boolean isOnline(Context ctx) {
@@ -116,11 +114,11 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        ProgressDialog loading = ProgressDialog.show(mContext, "Signing in...", "Please wait...", false, false);
+        setLoading(true);
         StringRequest loginReq = new StringRequest(Request.Method.POST, Config.LOGIN_URL,
                 response -> {
                     System.out.println("Operator Login Response: " + response);
-                    loading.dismiss();
+                    setLoading(false);
                     try {
                         JSONObject root = new JSONObject(response).getJSONObject("response");
                         int code = root.getInt("code");
@@ -130,7 +128,7 @@ public class LoginActivity extends AppCompatActivity {
                             String loginId = user.optString("login_credential_id", "");
                             String userId = user.optString("user_id", "");
                             String usernameResp = user.optString("username", "");
-                            String domain = user.optString("domain", "");ge
+                            String domain = user.optString("domain", "");
                             String token = user.optString("token", "");
                             saveLoginInfo(loginId, userId, usernameResp, domain, token);
                             SharedPreferences preferences = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
@@ -149,12 +147,12 @@ public class LoginActivity extends AppCompatActivity {
                 },
 
                 error -> {
-                    loading.dismiss();
+                    setLoading(false);
                     Toast.makeText(mContext, "Server error: " + error.toString(), Toast.LENGTH_LONG).show();
                 }) {
 
             @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
+            protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("username", username);
                 params.put("password", password);
@@ -164,7 +162,7 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
+            public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
@@ -179,11 +177,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void fetchRoutesAndOpenMain() {
-        ProgressDialog loading = ProgressDialog.show(this, "Loading routes...", "Please wait...", false, false);
+        setLoading(true);
         StringRequest req = new StringRequest(Request.Method.POST, Config.SPLASH_URL,
                 response -> {
                     System.out.println("Operator Route Response: " + response);
-                    loading.dismiss();
+                    setLoading(false);
                     try {
                         JSONObject root = new JSONObject(response).getJSONObject("response");
                         int code = root.optInt("code", 0);
@@ -205,14 +203,14 @@ public class LoginActivity extends AppCompatActivity {
                     finish();
                 },
                 error -> {
-                    loading.dismiss();
+                    setLoading(false);
                     Toast.makeText(this, "Error: " + error.toString(), Toast.LENGTH_LONG).show();
                     startActivity(new Intent(this, MainActivity.class));
                     finish();
                 }
         ) {
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
+            public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
                 String credentials = Config.API_USER_NAME + ":" + Config.API_PASSWORD;
                 String auth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
@@ -224,6 +222,16 @@ public class LoginActivity extends AppCompatActivity {
 
         req.setRetryPolicy(new DefaultRetryPolicy(30000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         Volley.newRequestQueue(this).add(req);
+    }
+
+    private void setLoading(boolean loading) {
+        if (loading) {
+            loginProgress.setVisibility(View.VISIBLE);
+            loginButton.setEnabled(false);
+        } else {
+            loginProgress.setVisibility(View.GONE);
+            loginButton.setEnabled(true);
+        }
     }
 
     private void saveRoutesJson(String json) {

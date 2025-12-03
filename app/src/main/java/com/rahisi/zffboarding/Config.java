@@ -11,12 +11,17 @@ public class Config {
 
     // static String app_ip = "https://booking.zff.co.tz/api/scanner/";
 
-    // static String app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
-
-    // static String app_ip = "https://ferries.rahisi.co.tz/api/scanner/";
+    /* Demo EndPoint */
+//    static String  app_ip = "https://demo.zanzibarfastferries.com/api/scanner/";
+//    static String  app_ip = "https://ferries.rahisi.co.tz/api/scanner/";
+//    static String  app_ip = "https://apiferries.rahisi.co.tz/scanner/";`
 
     // static String app_ip = "http://172.16.10.217:2019/scanner/";  // Vicent
-    static String app_ip = "http://172.16.10.171:7800/scanner/";     // John
+
+    /* Local EndPoints */
+//    static String  app_ip = "http://172.16.10.217:2019/scanner/";   // Vicent
+        static String app_ip = "http://172.16.10.171:7800/scanner/";     // John/**/
+//    static String logsEndpoint = "http://172.16.10.143:8052/api/";
 
     /* API Routes */
     public static final String SPLASH_URL = app_ip + "splash";
@@ -32,6 +37,7 @@ public class Config {
 
     public static final String API_USER_NAME = "goandroy";
     public static final String API_PASSWORD = "12345";
+    public static final String AUTH_TOKEN = "auth_token";
     public static final String API_KEY = "D6H8SKKRL79RJ4WWP5LASYNGJ";
     public static final String API_KEY_NAME = "API-KEY";
     public static final String KEY_OPERATOR = "operator";
