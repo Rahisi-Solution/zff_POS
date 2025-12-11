@@ -1,9 +1,18 @@
 package com.rahisi.zffboarding;
 
+import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK;
+import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+
+import com.google.android.material.button.MaterialButton;
 
 public class Config {
     /* Logs Endpoint */
@@ -20,20 +29,20 @@ public class Config {
 
     /* Local EndPoints */
 //    static String  app_ip = "http://172.16.10.217:2019/scanner/";   // Vicent
-        static String app_ip = "http://172.16.10.171:7800/scanner/";     // John/**/
+        static String app_ip = "http://172.16.10.171:7800/";     // John/**/
 //    static String logsEndpoint = "http://172.16.10.143:8052/api/";
 
     /* API Routes */
-    public static final String SPLASH_URL = app_ip + "splash";
-    public static final String LOGIN_URL = app_ip + "scanner_login.php";
-    public static final String LOGOUT_URL = app_ip + "scanner_logout.php";
+    public static final String SPLASH_URL = app_ip + "scanner/splash";
+    public static final String LOGIN_URL = app_ip + "scanner/scanner_login.php";
+    public static final String LOGOUT_URL = app_ip + "scanner/scanner_logout.php";
     public static final String CHANGE_PASSWORD = app_ip + "api/change_password";
     public static final String RESET_PASSWORD = app_ip + "api/reset_password";
-    public static final String BOOKING_URL = app_ip + "scanner_fetch_bookings.php";
-    public static final String UPDATE_TICKET_URL = app_ip + "customerboardingchecking";
-    public static final String FIND_TICKET_URL = app_ip + "scanner_get_ticket.php";
-    public static final String VERIFY_TICKET_URL = app_ip + "scanner_verify_ticket.php";
-    public static final String REPORT_ERROR_LOG = logsEndpoint + "issues_reporting/error_reporting.php";
+    public static final String BOOKING_URL = app_ip + "scanner/scanner_fetch_bookings.php";
+    public static final String UPDATE_TICKET_URL = app_ip + "scanner/customerboardingchecking";
+    public static final String FIND_TICKET_URL = app_ip + "scanner/scanner_get_ticket.php";
+    public static final String VERIFY_TICKET_URL = app_ip + "scanner/scanner_verify_ticket.php";
+    public static final String REPORT_ERROR_LOG = logsEndpoint + "scanner/issues_reporting/error_reporting.php";
 
     public static final String API_USER_NAME = "goandroy";
     public static final String API_PASSWORD = "12345";
@@ -88,4 +97,5 @@ public class Config {
             v.vibrate(500);
         }
     }
+
 }

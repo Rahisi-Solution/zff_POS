@@ -7,9 +7,9 @@
     <string name="title_activity_route">Select Route To Board</string>
     <!-- Strings related to login -->
     <string name="prompt_user_name">Operator ID</string>
-    <string name="prompt_user_password">PIN</string>
+    <string name="prompt_user_password">Password</string>
     <string name="action_sign_in">Sign In</string>
-    <string name="forgot_password">Forgot Password</string>
+    <string name="forgot_password">Forgot Password?</string>
     <string name="action_sign_in_short">Sign in</string>
     <string name="error_invalid_operator">This operator code is invalid</string>
     <string name="error_invalid_password">This operator key is too short</string>
@@ -137,4 +137,6 @@
     </string>
     <string name="operator_number">Enter Operator Number</string>
     <string name="reset_password">Reset Password</string>
+    <string name="session_expired">Session Expired</string>
+    <string name="please_re_login_to_continue">Please login to continue</string>
 </resources>

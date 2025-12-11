@@ -65,7 +65,7 @@ dependencies {
     implementation files('libs/telpo_api.jar')
     implementation files('libs/core-3.1.0.jar')
     implementation project(":DataCollection")
-    implementation 'androidx.activity:activity:1.11.0'
+    implementation 'androidx.activity:activity:1.10.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 }

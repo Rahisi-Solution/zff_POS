@@ -71,22 +71,32 @@
             <Button
                 android:id="@+id/operator_sign_in_button"
                 style="@style/button_login"
-                android:layout_height="70dp"
+                android:layout_height="40dp"
                 android:background="@drawable/button_validate_ticket"
                 android:text="@string/action_sign_in" />
 
-            <Button
+
+            <TextView
                 android:id="@+id/operator_forgot_password"
-                style="@style/button_login"
-                android:layout_height="70dp"
-                android:background="@drawable/button_manual"
-                android:text="@string/forgot_password" />
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center"
+                android:text="@string/forgot_password"
+                android:textAllCaps="false"
+                android:textColor="@color/primary_color"
+                android:textSize="15sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/session_img"
+                android:layout_marginTop="15dp"
+                app:layout_constraintVertical_bias="0.1" />
 
             <TextView
                 android:id="@+id/textView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="30dp"
+                android:layout_marginTop="10dp"
                 android:text="Powered By"
                 android:textAlignment="center"
                 android:textSize="12sp" />

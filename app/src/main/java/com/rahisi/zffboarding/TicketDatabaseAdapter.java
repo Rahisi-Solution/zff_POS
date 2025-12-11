@@ -33,6 +33,20 @@ public class TicketDatabaseAdapter {
         return id;
     }
 
+    public int updateBoardingStatus(String ticketNumber, String newStatus) {
+        SQLiteDatabase db = ticketDatabaseHelper.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Config.BOARDING, newStatus);
+        System.out.println("We are updating now .......");
+        return db.update(
+                Config.TICKET_TABLE_NAME,
+                contentValues,
+                Config.TICKET_NUMBER + " = ?",
+                new String[]{ticketNumber}
+        );
+    }
+
+
     public JSONArray getAllTikets() {
         SQLiteDatabase db = ticketDatabaseHelper.getWritableDatabase();
         String[] columns = {Config.TICKET_ID, Config.BOOKING_ID, Config.TICKET_NUMBER, Config.PASSENGER_NAME, Config.PASSENGER_AGE,

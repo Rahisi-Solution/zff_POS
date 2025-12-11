@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -58,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
         usernameField = findViewById(R.id.operator_code);
         passwordField = findViewById(R.id.operator_key);
         loginButton = findViewById(R.id.operator_sign_in_button);
-        Button forgotPasswordButton = findViewById(R.id.operator_forgot_password);
+        TextView forgotPasswordButton = findViewById(R.id.operator_forgot_password);
         loginProgress = findViewById(R.id.login_progress);
 
         passwordField.setOnKeyListener((v, keyCode, event) -> {
@@ -75,7 +76,10 @@ public class LoginActivity extends AppCompatActivity {
             else showSnackBar("No internet connection");
         });
 
-        forgotPasswordButton.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ResetPasswordActivity.class)));
+        forgotPasswordButton.setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, ResetPasswordActivity.class));
+//            startActivity(new Intent(LoginActivity.this, ChangePasswordActivity.class));
+        });
     }
 
     public static boolean isOnline(Context ctx) {
@@ -133,6 +137,7 @@ public class LoginActivity extends AppCompatActivity {
                             saveLoginInfo(loginId, userId, usernameResp, domain, token);
                             SharedPreferences preferences = getSharedPreferences(Config.SHARED_PREF_NAME, MODE_PRIVATE);
                             preferences.edit().putString(Config.KEY_OPERATOR, username).apply();
+                            preferences.edit().putString(Config.AUTH_TOKEN, token).apply();
                             fetchRoutesAndOpenMain();
                         } else if (code == 100) {
                             showSnackBar(message);

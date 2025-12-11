@@ -2,5 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/menuChangeLocation" android:title="@string/btn_change_route" />
     <item android:id="@+id/menuChangeMode" android:title="@string/btn_change_mode" />
+    <item android:id="@+id/menuChangePassword" android:title="@string/change_password" />
     <item android:id="@+id/menuLogout" android:title="@string/btn_logout" />
 </menu>
